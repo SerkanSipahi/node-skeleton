@@ -1,0 +1,40 @@
+{
+  "name": "skeleton",
+  "version": "0.0.0",
+  "main": "lib/skeleton.js",
+  "description": "The best module ever.",
+  "homepage": "https://github.com/SerkanSipahi/skeleton",
+  "bugs": "https://github.com/SerkanSipahi/skeleton/issues",
+  "author": {
+    "name": "Serkan Sipahi",
+    "email": "serkan.sipahi@yahoo.de"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SerkanSipahi/skeleton"
+  },
+  "license": "MIT",
+  "files": [
+    "lib"
+  ],
+  "keywords": [
+    "skeleton",
+    ""
+  ],
+  "preferGlobal": "true",
+  "bin": {
+    "skeleton" : "lib/skeleton.js"
+  },
+  "devDependencies": {
+    "grunt-contrib-jshint": "^0.10.0",
+    "grunt-contrib-nodeunit": "^0.3.3",
+    "grunt-contrib-watch": "^0.6.1",
+    "load-grunt-tasks": "^0.4.0",
+    "time-grunt": "^0.3.1",
+    "jshint-stylish": "^0.2.0",
+    "which": "~1.0.5"
+  },
+  "scripts": {
+    "test": "grunt"
+  }
+}
