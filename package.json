@@ -1,29 +1,27 @@
 {
-  "name": "skeleton",
-  "version": "0.0.0",
-  "main": "lib/skeleton.js",
-  "description": "The best module ever.",
-  "homepage": "https://github.com/SerkanSipahi/skeleton",
-  "bugs": "https://github.com/SerkanSipahi/skeleton/issues",
+  "name": "node-skeleton",
+  "version": "0.1.0",
+  "main": "skeleton.js",
+  "homepage": "https://github.com/SerkanSipahi/node-skeleton",
+  "bugs": "https://github.com/SerkanSipahi/node-skeleton/issues",
   "author": {
     "name": "Serkan Sipahi",
     "email": "serkan.sipahi@yahoo.de"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/SerkanSipahi/skeleton"
+    "url": "https://github.com/SerkanSipahi/node-skeleton"
   },
   "license": "MIT",
   "files": [
     "lib"
   ],
   "keywords": [
-    "skeleton",
-    ""
+    "skeleton"
   ],
   "preferGlobal": "true",
   "bin": {
-    "skeleton" : "lib/skeleton.js"
+    "node-skeleton": "node-skeleton.js"
   },
   "devDependencies": {
     "grunt-contrib-jshint": "^0.10.0",
@@ -36,5 +34,9 @@
   },
   "scripts": {
     "test": "grunt"
+  },
+  "dependencies": {
+    "jquery": "~2.1.1",
+    "jsdom": "~0.11.1"
   }
 }
