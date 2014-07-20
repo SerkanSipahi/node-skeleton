@@ -110,7 +110,7 @@
                     } catch (e) {
                         message = 'Please Install Sass'; resolved=false;
                     }
-                    foo = resolved ? dfd.resolve(bin) : dfd.reject(message);
+                    foo = resolved ? dfd.resolve(true) : dfd.reject(false);
                 });
             };
 
@@ -199,9 +199,6 @@
                 });
             };
 
-        },
-        test : function(){
-            return 'xTestx';
         }
     };
 
