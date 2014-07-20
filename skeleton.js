@@ -14,31 +14,38 @@
 
     var which  = require('which'),
         fs     = require('fs-extra'),
-        path   = require('path'),
         mkdirp = require('mkdirp'),
         env    = require('jsdom').env,
         $      = {};
 
-    function Skeleton(){
+    // > todo: ändern node-skeleton weil es auch eine frontend-skeleton geben wird
+    function Skeleton(undefined, callbacks){
 
         this.args = arguments[0];
+        this.callbacks = callbacks || {};
         this.matched  = [];
         this.sk_scss_data = '';
         this.pattern = /sk-(left|top|bottom|right)-nav(?:.*?)data-sk-align="static:until\((\d+px)\)"/gm;
 
         this.path = {
-            'skeletonCore' : '../sass/skeleton.sass',
-            'skeleton_tmp' : '../tmp/skeleton_tmp.scss',
+            'skeletonCore' : './sass/skeleton.scss',
+            'skeleton_tmp' : './tmp/tmp-skeleton.scss',
             'htmlFile' : ''
         };
         this.cmd = {
             '--path' : true,
             '--show' : true
         };
+        this.errorMessages = {
+
+        };
 
         env('-', function (errors, window) {
             $ = require('jquery')(window);
             this.init();
+            if(this.callbacks.onReady!==void(0)){
+                this.callbacks.onReady.call(this);
+            }
         }.bind(this));
 
     }
@@ -49,35 +56,61 @@
             var self = this;
 
             $.when(true)
-                // > checks
+                // > Checks
                 .then(self.binExists('sass'))
                 .then(self.maxPassedArgs(self.args, 2))
                 .then(self.checkAndSetPassedArgs())
                 .then(self.wait(1500))
                 .then(self.mkdirp('tmp'))
-                // > build sassfile
+                .then(self.writeFile(this.path.skeleton_tmp, 'this is bar write foo in file!'))
+                .then(function(data){
+                    return self.match(/bar|foo/gm, data)().done(function(data){
+                        console.log('xfoox', data);
+                    });
+                })
+                // > Business-Logic
 
             .fail(function(value){
                 console.log(value);
+                console.log('fail');
             })
             .done(function(value){
                 console.log(self.path.htmlFile);
                 console.log(value);
                 console.log('all done');
             });
-
         },
+
+        // > Business-Logic Methods
+        checkAndSetPassedArgs : function(){
+
+            var self = this;
+
+            return function(){
+                return $.Deferred(function(dfd){
+                    if(!self.cmd[self.args[0]]){
+                        dfd.reject('ungültiger Parameter: ' + self.args[0]);
+                    } else {
+                        self.readFile(self.args[1])().done(function(){
+                            self.path.htmlFile = self.args[1]; dfd.resolve();
+                        }).fail(function(){dfd.reject('FileNotFound, cant load [' + self.args[1] + '] file!');});
+                    }
+                });
+            };
+        },
+
+        // > Helper-Promise Methods
         binExists : function(bin){
 
             return function(){
                 return $.Deferred(function(dfd){
-                    var resolved, message;
+                    var resolved, message, foo;
                     try {
                         which.sync(bin); resolved=true;
                     } catch (e) {
                         message = 'Please Install Sass'; resolved=false;
                     }
-                    resolved ? dfd.resolve(200) : dfd.reject(message);
+                    foo = resolved ? dfd.resolve(bin) : dfd.reject(message);
                 });
             };
 
@@ -89,26 +122,10 @@
                     if(args.length<max){
                         dfd.reject('Sie müssen mindestens '+max+' Parameter übergeben z.B. index.html --path');
                     }
-                    dfd.resolve(200);
+                    dfd.resolve(args, max);
                 });
-            }
+            };
 
-        },
-        checkAndSetPassedArgs : function(){
-
-            var self = this;
-
-            return function(){
-                return $.Deferred(function(dfd){
-                    if(!self.cmd[self.args[0]]){
-                        dfd.reject('ungültiger Parameter: ' + self.args[0]);
-                    } else {
-                        self.readFile(self.args[1])().done(function(data){
-                            self.path.htmlFile = self.args[1]; dfd.resolve();
-                        }).fail(function(){dfd.reject('FileNotFound, cant load [' + self.args[1] + '] file!')});
-                    }
-                });
-            }
         },
         readFile : function(filename, charset){
 
@@ -116,14 +133,13 @@
                 return $.Deferred(function(dfd){
                     var _charset = charset || 'utf8';
                     fs.readFile(filename, _charset, function(err, data) {
-                        if(!err) {
-                            dfd.resolve(data);
+                        if(!err) { dfd.resolve(data);
                         } else {
                             dfd.reject('FileNotFound, cant load [' + filename + '] file!');
                         }
                     });
                 });
-            }
+            };
 
         },
         mkdirp : function(path){
@@ -131,46 +147,47 @@
             return function(){
                 return $.Deferred(function(dfd){
                     mkdirp(path, function(err){
+                        // > ist das so möglich? wenn reject, wird dann auch resolve aufgerufen?
                         if(err){ dfd.reject(err); }
-                        dfd.resolve('mkdirp done!');
+                        dfd.resolve(path);
                     });
                 });
-            }
+            };
 
         },
         writeFile : function(filename, data, chmod){
 
-            var _dfd   = $.Deferred(),
-                _data  = data  || ' ',
-                _chmod = chmod || '0777';
+            return function(){
+                return $.Deferred(function(dfd){
 
-            fs.writeFile(filename, _data, function (err) {
-                if(err) { _dfd.reject('FileCouldNotWrite', 'cant write [' + filename + '] file!'); }
-                fs.chmod(filename, _chmod, function(){
-                    _dfd.reject('PermissionDenied', 'cant set chmod [' + _chmod + ']');
+                    var _data  = data  || ' ',
+                        _chmod = chmod || '0777';
+
+                    fs.writeFile(filename, _data, function (err) {
+                        if(err) { dfd.reject('FileCouldNotWrite cant write [' + filename + '] file!'); }
+                        fs.chmod(filename, _chmod, function(){
+                            dfd.reject('PermissionDenied cant set chmod [' + _chmod + ']');
+                        });
+                        dfd.resolve(data);
+                    });
+
                 });
-                _dfd.resolve(200);
-            });
-            return _dfd.promise();
+            };
 
         },
-        match : function(pattern, data, slice_start, slice_end){
+        match : function(pattern, data){
 
-            var _dfd = $.Deferred(),
-                match, container=[], tmpContainer=[];
-
-            while(match!==null){
-                match = pattern.exec(data);
-                if(match!==null){
-                    tmpContainer=[];
-                    for(var i= ( slice_start || 0 ), length=( slice_end || match.length ); i<length; i++){
-                        tmpContainer.push(match[i]);
+            return function(){
+                return $.Deferred(function(dfd){
+                    var matches = [], match;
+                    // > bei regex "g" nicht vergessen anzugeben z.B. /foo/g
+                    while ((match = pattern.exec(data)) && match[0]!==void(0)) {
+                        matches.push(match[0]);
                     }
-                    container.push(tmpContainer);
-                }
-            }
-            _dfd.resolve(container);
-            return _dfd.promise();
+                    dfd.resolve(matches);
+                });
+            };
+
         },
         wait : function(time){
 
@@ -182,6 +199,9 @@
                 });
             };
 
+        },
+        test : function(){
+            return 'xTestx';
         }
     };
 

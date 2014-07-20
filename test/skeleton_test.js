@@ -1,36 +1,19 @@
 'use strict';
 
-var skeleton = require('../lib/skeleton.js');
 
-/*
-  ======== A Handy Little Nodeunit Reference ========
-  https://github.com/caolan/nodeunit
+var Skeleton = require('../skeleton.js');
 
-  Test methods:
-    test.expect(numAssertions)
-    test.done()
-  Test assertions:
-    test.ok(value, [message])
-    test.equal(actual, expected, [message])
-    test.notEqual(actual, expected, [message])
-    test.deepEqual(actual, expected, [message])
-    test.notDeepEqual(actual, expected, [message])
-    test.strictEqual(actual, expected, [message])
-    test.notStrictEqual(actual, expected, [message])
-    test.throws(block, [error], [message])
-    test.doesNotThrow(block, [error], [message])
-    test.ifError(value)
-*/
+new Skeleton(['--path', 'index.html'], {
+    onReady : function(){
+        this.match(/foo/g, 'bar foo xbar')().done(function(){
 
-exports.skeleton = {
-  setUp: function(done) {
-    // setup here
-    done();
-  },
-  'no args': function(test) {
+        });
+    }
+});
+
+exports.testSomething = function(test){
     test.expect(1);
-    // tests here
-    test.equal(skeleton.awesome(), 'awesome', 'should be awesome.');
+    test.ok(true, "this assertion should pass");
     test.done();
-  }
 };
+
