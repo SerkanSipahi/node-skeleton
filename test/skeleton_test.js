@@ -1,7 +1,7 @@
 'use strict';
 
 
-var Skeleton = require('../skeleton.js'),
+var Skeleton = require('../node-skeleton.js'),
     SimpleUnitTest = function(){
         this.i=1;
     };
@@ -19,18 +19,52 @@ var Skeleton = require('../skeleton.js'),
 var test = new SimpleUnitTest();
 
 
-new Skeleton(['--path', 'index.html'], {
+// >>> !!! Tests bitte direkt( momentan ) in Webstorm ausführen( rechte Maustaste -> Run )
+
+new Skeleton(['--path', '../index.html'], {
     onReady : function(){
+
+        // >> match testing
 
         this.match(/foo/g, 'bar foo xbar')().done(function(data){
             test.equal('foo', data[0], 'Testing match');
         });
-
         this.match(/foo/g, 'bar foo xfoo')().done(function(data){
             test.equal(2, data.length, 'Testing match length');
         });
 
-        
+        // >> binExists Testing
+
+        this.binExists('sass')().done(function(data){
+            test.equal(true, data, 'bin Exists');
+        });
+        this.binExists('chucky')().fail(function(data){
+            test.equal(false, data, 'bin not Exists');
+        });
+
+        // >> maxPassedArgs
+
+        this.maxPassedArgs(['foo', 'bar', 'bubu'], 3)().done(function(arg){
+            test.equal(true, arg, 'maxPassedArgs on successful');
+        });
+
+        this.maxPassedArgs(['foo', 'bar'], 3)().fail(function(arg){
+            test.equal(
+                'Sie müssen mindestens 3 Parameter übergeben z.B. index.html --path', arg,
+                'maxPassedArgs on fail'
+            );
+        });
+
+        // >> readFile
+
+        this.readFile('fixture_file.txt')().done(function(data){
+            test.equal('im foo in fixture file', data, 'this.readFile on done');
+        });
+
+        this.readFile('xxfixture_file.txt')().fail(function(data){
+            test.equal('FileNotFound, cant load [xxfixture_file.txt] file!', data, 'this.readFile on fail');
+        });
+
     }
 });
 

@@ -64,20 +64,19 @@
                 .then(self.mkdirp('tmp'))
                 .then(self.writeFile(this.path.skeleton_tmp, 'this is bar write foo in file!'))
                 .then(function(data){
-                    return self.match(/bar|foo/gm, data)().done(function(data){
-                        console.log('xfoox', data);
+                    return self.match(/bar|foo/gm, data)().done(function(/*data*/){
+                        //console.log('xfoox', data);
                     });
                 })
                 // > Business-Logic
 
             .fail(function(value){
-                console.log(value);
-                console.log('fail');
+                console.log('fail,', value);
             })
-            .done(function(value){
-                console.log(self.path.htmlFile);
-                console.log(value);
-                console.log('all done');
+            .done(function(/*value*/){
+                //console.log(self.path.htmlFile);
+                //console.log(value);
+                //console.log('all done');
             });
         },
 
@@ -89,7 +88,7 @@
             return function(){
                 return $.Deferred(function(dfd){
                     if(!self.cmd[self.args[0]]){
-                        dfd.reject('ungültiger Parameter: ' + self.args[0]);
+                        dfd.reject('Ungültiger Parameter: ' + self.args[0]);
                     } else {
                         self.readFile(self.args[1])().done(function(){
                             self.path.htmlFile = self.args[1]; dfd.resolve();
@@ -119,10 +118,11 @@
 
             return function(){
                 return $.Deferred(function(dfd){
-                    if(args.length<max){
+                    args = args || [];
+                    if(args.length!==max){
                         dfd.reject('Sie müssen mindestens '+max+' Parameter übergeben z.B. index.html --path');
                     }
-                    dfd.resolve(args, max);
+                    dfd.resolve(true);
                 });
             };
 
@@ -131,11 +131,12 @@
 
             return function(){
                 return $.Deferred(function(dfd){
-                    var _charset = charset || 'utf8';
-                    fs.readFile(filename, _charset, function(err, data) {
-                        if(!err) { dfd.resolve(data);
-                        } else {
+                    charset = charset || 'utf8';
+                    fs.readFile(filename, charset, function(err, data) {
+                        if(err) {
                             dfd.reject('FileNotFound, cant load [' + filename + '] file!');
+                        } else {
+                            dfd.resolve(data);
                         }
                     });
                 });

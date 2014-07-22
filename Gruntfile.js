@@ -19,7 +19,7 @@ module.exports = function (grunt) {
                 src: 'Gruntfile.js'
             },
             main: {
-                src: ['skeleton.js']
+                src: ['node-skeleton.js']
             },
             test: {
                 src: ['test/*_test.js']
