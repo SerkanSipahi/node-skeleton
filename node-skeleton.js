@@ -18,8 +18,7 @@
         env    = require('jsdom').env,
         $      = {};
 
-    // > todo: ändern node-skeleton weil es auch eine frontend-skeleton geben wird
-    function Skeleton(undefined, callbacks){
+    function NodeSkeleton(undefined, callbacks){
 
         this.args = arguments[0];
         this.callbacks = callbacks || {};
@@ -49,7 +48,7 @@
         }.bind(this));
 
     }
-    Skeleton.prototype = {
+    NodeSkeleton.prototype = {
 
         init : function(){
 
@@ -60,12 +59,14 @@
                 .then(self.binExists('sass'))
                 .then(self.maxPassedArgs(self.args, 2))
                 .then(self.checkAndSetPassedArgs())
-                .then(self.wait(1500))
                 .then(self.mkdirp('tmp'))
-                .then(self.writeFile(this.path.skeleton_tmp, 'this is bar write foo in file!'))
+                .then(self.writeFile(self.path.skeleton_tmp))
+                .then(function(){
+                    return self.readFile(self.path.htmlFile)();
+                })
                 .then(function(data){
-                    return self.match(/bar|foo/gm, data)().done(function(/*data*/){
-                        //console.log('xfoox', data);
+                    self.match(self.pattern, data, 1)().done(function(matched){
+                        self.matched = matched; console.log(self.matched);
                     });
                 })
                 // > Business-Logic
@@ -128,7 +129,6 @@
 
         },
         readFile : function(filename, charset){
-
             return function(){
                 return $.Deferred(function(dfd){
                     charset = charset || 'utf8';
@@ -161,13 +161,13 @@
             return function(){
                 return $.Deferred(function(dfd){
 
-                    var _data  = data  || ' ',
-                        _chmod = chmod || '0777';
+                    data  = data  || ' ';
+                    chmod = chmod || '0777';
 
-                    fs.writeFile(filename, _data, function (err) {
+                    fs.writeFile(filename, data, function (err) {
                         if(err) { dfd.reject('FileCouldNotWrite cant write [' + filename + '] file!'); }
-                        fs.chmod(filename, _chmod, function(){
-                            dfd.reject('PermissionDenied cant set chmod [' + _chmod + ']');
+                        fs.chmod(filename, chmod, function(){
+                            dfd.reject('PermissionDenied cant set chmod [' + chmod + ']');
                         });
                         dfd.resolve(data);
                     });
@@ -176,14 +176,18 @@
             };
 
         },
-        match : function(pattern, data){
+        match : function(pattern, data, slice_start, slice_end){
 
             return function(){
                 return $.Deferred(function(dfd){
-                    var matches = [], match;
+                    var matches = [], tmpMatches = [], match;
                     // > bei regex "g" nicht vergessen anzugeben z.B. /foo/g
                     while ((match = pattern.exec(data)) && match[0]!==void(0)) {
-                        matches.push(match[0]);
+                        tmpMatches = [];
+                        for(var i= ( slice_start || 0 ), length=( slice_end || match.length ); i<length; i++){
+                            tmpMatches.push(match[i]);
+                        }
+                        matches.push(tmpMatches);
                     }
                     dfd.resolve(matches);
                 });
@@ -204,9 +208,9 @@
     };
 
     if(require.main === module) {
-        new Skeleton(process.argv.slice(2));
+        new NodeSkeleton(process.argv.slice(2));
     } else {
-        module.exports = Skeleton;
+        module.exports = NodeSkeleton;
     }
 
 }());
