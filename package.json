@@ -31,7 +31,8 @@
     "time-grunt": "^0.3.1",
     "jshint-stylish": "^0.2.0",
     "which": "~1.0.5",
-    "grunt-contrib-jasmine": "~0.6.5"
+    "grunt-contrib-jasmine": "~0.6.5",
+    "ncp": "~0.6.0"
   },
   "scripts": {
     "test": "grunt"

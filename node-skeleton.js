@@ -12,23 +12,37 @@
 
     'use strict';
 
-    var which  = require('which'),
+    var self   = {},
+        which  = require('which'),
         fs     = require('fs-extra'),
         mkdirp = require('mkdirp'),
+        bower  = require('bower'),
+        /*
+         * wird für das kopieren von Dateien/Verzeichnisse benötigt!
+         * z.B. liya.js aus bower_components nach vendor.
+         * liya.js wird in browser-node benötigt
+         *
+         **/
+        ncp    = require('ncp').ncp,
         env    = require('jsdom').env,
         $      = {};
 
     function NodeSkeleton(undefined, callbacks){
 
+        self = this;
+
         this.args = arguments[0];
         this.callbacks = callbacks || {};
-        this.matched  = [];
-        this.sk_scss_data = '';
         this.pattern = /sk-(left|top|bottom|right)-nav(?:.*?)data-sk-align="static:until\((\d+px)\)"/gm;
 
+        this.data = {
+            matched  : [],
+            skeleton : null,
+            htmlFile : null
+        };
         this.path = {
-            'skeletonCore' : './sass/skeleton.scss',
-            'skeleton_tmp' : './tmp/tmp-skeleton.scss',
+            'skeleton' : './scss/skeleton.scss',
+            'tmp_skeleton' : './tmp/tmp-skeleton.scss',
             'htmlFile' : ''
         };
         this.cmd = {
@@ -52,39 +66,45 @@
 
         init : function(){
 
-            var self = this;
-
             $.when(true)
-                // > Checks
+                // > Checks / Inits
+                .then(self.binExists('bower'))
                 .then(self.binExists('sass'))
                 .then(self.maxPassedArgs(self.args, 2))
+                /*
+                 * Wenn folgendes implementieren:
+                 * https://www.npmjs.org/package/commander
+                 * */
                 .then(self.checkAndSetPassedArgs())
                 .then(self.mkdirp('tmp'))
-                .then(self.writeFile(self.path.skeleton_tmp))
+                .then(self.writeFile(self.path.tmp_skeleton))
                 .then(function(){
-                    return self.readFile(self.path.htmlFile)();
+                    return self.readFile(self.path.htmlFile)().done(function(data){
+                        self.data.htmlFile = data;
+                    });
                 })
-                .then(function(data){
-                    self.match(self.pattern, data, 1)().done(function(matched){
-                        self.matched = matched; console.log(self.matched);
+                .then(function(){
+                    return self.readFile(self.path.skeleton)().done(function(data){
+                        self.data.skeleton = data;
                     });
                 })
                 // > Business-Logic
-
+                .then(function(){
+                    return self.match(self.pattern, self.data.htmlFile, 1)().done(function(matched){
+                        self.data.matched = matched;
+                    });
+                })
             .fail(function(value){
                 console.log('fail,', value);
             })
-            .done(function(/*value*/){
-                //console.log(self.path.htmlFile);
-                //console.log(value);
+            .done(function(result){
+                //console.log(result);
                 //console.log('all done');
             });
         },
 
         // > Business-Logic Methods
         checkAndSetPassedArgs : function(){
-
-            var self = this;
 
             return function(){
                 return $.Deferred(function(dfd){
@@ -141,6 +161,9 @@
                     });
                 });
             };
+
+        },
+        copy : function(source, destination){
 
         },
         mkdirp : function(path){

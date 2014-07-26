@@ -1,0 +1,452 @@
+@charset "UTF-8";
+
+.sk-overflow-hidden   { overflow : hidden; }
+.sk-overflow-auto     { overflow : auto;  }
+.sk-position-relative { position : relative ; }
+.sk-position-absolute { position : absolute ; }
+.sk-display-none      { display  : none; }
+.sk-display-block     { display  : block; }
+
+#skeleton {
+    .sk-left-nav,
+    .sk-top-nav,
+    .sk-right-nav,
+    .sk-bottom-nav,
+    .sk-content {
+        @include transition(all 250ms ease-in-out);
+    }
+};
+
+// >>> Custom Menu default Settings
+.sk-custom-menu {
+    @extend .sk-display-none;
+    @extend .sk-position-absolute;
+}
+
+/*
+ * Custom-Menus benötigen keine höhen Angaben bei left/right
+ * und keine breiten Angaben bei top/bottom!
+ */
+// >>> Custom Menus //
+#skeleton {
+    .sk-menu-foo-L  { width: 200px; background-color: lighten(#000000, 10%); }
+    .sk-menu-lool-L { width: 250px; background-color: lighten(#000000, 20%); }
+    .sk-menu-cool-L { width: 300px; background-color: lighten(#000000, 30%); }
+
+    .sk-menu-foo-B  { height:  50px; background-color: lighten(#000000, 40%); }
+    .sk-menu-lool-B { height: 100px; background-color: lighten(#000000, 50%); }
+    .sk-menu-cool-B { height: 150px; background-color: lighten(#000000, 60%); }
+}
+/////////////////////
+
+body, html {
+    @extend .sk-overflow-hidden;
+    height : 100%;
+}
+
+$core-main-wrapper-x   : 1500px !default; // > width
+$core-left-nav-x       :  300px !default; // > width
+$core-right-nav-x      :  150px !default; // > width
+$core-top-nav-x        :   50px !default; // > height
+$core-bottom-nav-x     :  100px !default; // > height
+$core-gutter           :   10px !default;
+
+$core-default-breakpoint : 1024 !default;
+
+$positions : (
+	left   : $core-left-nav-x,
+	right  : $core-right-nav-x,
+	top    : $core-top-nav-x,
+	bottom : $core-bottom-nav-x
+);
+
+// > das Value wird dynamisch mit grunt ( task - skeleton:until ) ersetzt!
+$__skeleton-until-navs-as-hash__ : __skeleton-until-navs-as-hash__;
+
+#skeleton {
+
+    // > debug color
+    background-color: gray;
+
+    @extend .sk-overflow-hidden;
+    @extend .sk-position-relative;
+
+    margin     : 0 auto;
+    max-width  : $core-main-wrapper-x;
+    height     : auto !important;
+    min-height : 100%;
+
+    // > common atrributes
+    .sk-left-nav {
+        background-color: green;
+        @extend .sk-overflow-auto;
+        @extend .sk-position-absolute;
+        z-index : 10;
+        width   : $core-left-nav-x;
+        top     : if($core-top-nav-x != 0px, $core-top-nav-x, 0);
+        bottom  : if($core-bottom-nav-x != 0px, $core-bottom-nav-x, 0);
+    }
+    .sk-right-nav {
+        background-color: yellow;
+        @extend .sk-overflow-auto;
+        @extend .sk-position-absolute;
+        z-index : 10;
+        width   : $core-right-nav-x;
+        top     : if($core-top-nav-x != 0px, $core-top-nav-x, 0);
+        bottom  : if($core-bottom-nav-x != 0px, $core-bottom-nav-x, 0);;
+    }
+    .sk-top-nav {
+        background-color: red;
+        @extend .sk-overflow-hidden;
+        @extend .sk-position-absolute;
+        z-index : 9;
+        height  : $core-top-nav-x;
+        left    : 0;
+        right   : 0;
+    }
+    .sk-bottom-nav {
+        background-color: deeppink;
+        @extend .sk-overflow-hidden;
+        @extend .sk-position-absolute;
+        z-index : 9;
+        height  : $core-bottom-nav-x;
+        left    : 0;
+        right   : 0;
+    }
+    // > content area
+    .sk-content {
+        background-color: blue;
+        @extend .sk-overflow-auto;
+        @extend .sk-position-absolute;
+        z-index : 20; // wenn z-index hier angepasst wird, z-index hier createCoreSkWallPositions nicht vergessen
+        // > if we havent left or right nav in dom,
+        //   this will be the default value of sk-content
+        left    : 0;
+        right   : 0;
+        ///////////////////////////////////////////
+        top     : if($core-top-nav-x != 0px, $core-top-nav-x, 0);
+        bottom  : if($core-bottom-nav-x != 0px, $core-bottom-nav-x, 0);;
+    }
+
+    // >>> wenn align =  left, right, top, bottom
+
+    // .sk-left-nav[data-sk-align="left"]  { $position(left)   : -$width(300) }
+    // .sk-right-nav[data-sk-align="right"] { $position(right)  : -$width(300) }
+    // .sk-top-nav[data-sk-align="top"]   { $position(top)    : -$width(50) }
+    // .sk-bottom-nav[data-sk-align="bottom"]{ $position(bottom) : -$width(100) }
+
+    @each $position in left, right, top, bottom {
+        // > outside: left/left, top/top, right/right, bottom/bottom
+        .sk-#{$position}-nav[data-sk-align="#{$position}"] {
+            #{$position} : map-get($positions, $position) * -1;
+        }
+        // > outside
+        .sk-#{$position}-nav[data-sk-align="outside"] {
+            #{$position} : map-get($positions, $position) * -1;
+        }
+    }
+
+    // >>> wenn align = default, static, back, front
+
+    // .sk-left-nav[data-sk-align="default"] { $position(left) : 0 }
+    // .sk-left-nav[data-sk-align="static"]  { $position(left) : 0  }
+    // .sk-left-nav[data-sk-align="back"]    { $position(left) : 0  }
+    // .sk-left-nav[data-sk-align="front"]   { $position(left) : 0  }
+
+    @each $align in default, static, back, front {
+        @each $position in left, right, top, bottom {
+
+            .sk-#{$position}-nav[data-sk-align="#{$align}"] {
+                #{$position} : 0;
+
+                // > align=front has the same setting. The only difference is the z-index
+                @if($align == front and ( $position == top or $position == bottom )){
+                    // > debug opacity
+                    opacity: 0.5;
+                    z-index: 22 !important;
+                }
+            }
+
+        }
+    }
+
+    // >>> wenn die navigationen als align = default, static, front,
+    // left, right, back, back, top or bottom haben muss .sk-content
+    // sich dem entsprechend auch anpassen
+
+    // e.g left ! right, top, bottom wird ebenso erstellt
+    // .sk-content[data-sk-left-opt="default"] { $position : $width; }
+    // .sk-content[data-sk-left-opt="static"]  { $position : $width; }
+    // .sk-content[data-sk-left-opt="front"]   { $position : 0; }
+    // .sk-content[data-sk-left-opt="left"]    { $position : 0; }
+    // .sk-content[data-sk-left-opt="right"]   { $position : 0; }
+    // .sk-content[data-sk-left-opt="back"]    { $position : 0; }
+    // .sk-content[data-sk-left-opt="top"]     { $position : 0; }
+    // .sk-content[data-sk-left-opt="bottom"]  { $position : 0; }
+
+    @each $position in left, right, top, bottom {
+        @each $align in default, static, left, back, front {
+
+            .sk-content[data-sk-#{$position}-opt="#{$align}"],
+            .sk-content[data-sk-#{$position}-opt="outside"]{
+                @if($align != default and $align != static and $align){
+                    #{$position} : 0;
+                } @else {
+                    #{$position} : map-get($positions, $position);;
+                }
+            }
+
+        }
+    }
+
+    // *** relatedTo->(1) skeleton.js ***
+    // >>> wenn top or bottom nicht im sichtbaren Bereich ist,
+    // nehmen left or right und content ihre positionen top:0, bottom:0 ein!
+    //
+
+    // >>> left/right
+    .sk-left-nav[data-sk-top-opt="top"],
+    .sk-right-nav[data-sk-top-opt="top"],
+    .sk-left-nav[data-sk-top-opt="back"],
+    .sk-right-nav[data-sk-top-opt="back"],{
+        top: 0;
+    }
+    .sk-left-nav[data-sk-bottom-opt="bottom"],
+    .sk-right-nav[data-sk-bottom-opt="bottom"],
+    .sk-left-nav[data-sk-bottom-opt="back"],
+    .sk-right-nav[data-sk-bottom-opt="back"]{
+        bottom: 0;
+    }
+    // >>> content
+    .sk-content[data-sk-top-opt="top"],
+    .sk-content[data-sk-top-opt="back"]{
+        top: 0;
+    }
+    .sk-content[data-sk-bottom-opt="bottom"],
+    .sk-content[data-sk-bottom-opt="back"]{
+        bottom: 0;
+    }
+
+    // >>>>> Start data-sk-float
+
+    // >>> wenn left oder rechte Navigation als align default oder static haben und
+    // data-sk-float sind haben left oder right navigation top:0, bottom:0,
+
+    @each $item in default, static {
+        .sk-left-nav[data-sk-align="#{$item}"][data-sk-float],
+        .sk-right-nav[data-sk-align="#{$item}"][data-sk-float] {
+            top: 0; bottom: 0;
+        }
+    }
+
+    // *** relatedTo->(2) skeleton.scss ***
+    // >>> wenn left oder rechte Navigatio als align default, static, front, back und
+    // data-sk-float sind müssen die top, content, bottom ihre positionen einnehmen
+
+    @each $item in left, right {
+        @each $align in default, static, front, back {
+            // >>> wenn nur an der linken oder rechten navi data-sk-float angeben wurde
+            .sk-top-nav[data-sk-align="#{$align}"][data-sk-opt-float="#{$item}"] {
+                #{$item} : map-get($positions, $item);
+            }
+            .sk-bottom-nav[data-sk-align="#{$align}"][data-sk-opt-float="#{$item}"] {
+                #{$item} : map-get($positions, $item);
+            }
+            // >>> wenn auf linker und rechter navi data-sk-float angegen wurde
+            .sk-top-nav[data-sk-align="#{$align}"][data-sk-opt-float="left,right"] {
+                left: map-get($positions, left); right: map-get($positions, right);
+            }
+            .sk-bottom-nav[data-sk-align="#{$align}"][data-sk-opt-float="left,right"] {
+                left: map-get($positions, left); right: map-get($positions, right);
+            }
+        }
+    }
+
+    // >>>>> End data-sk-float
+
+    // >>>  Handle default Media Queries sk-{position}-nav=default
+
+    @media (max-width: $core-default-breakpoint){
+
+        // >>> wenn left/right-navi static, top/bottom-navi static,
+        // und left/right-navi data-sk-float, dann top/bottom-nav nicht
+        // position left=0/right=0 sondern top/bottom-nav = $nav-with
+
+        .sk-top-nav:not(.sk-top-nav[data-sk-opt-float="left"]),
+        .sk-bottom-nav:not(.sk-bottom-nav[data-sk-opt-float="left"]) {
+            left:0!important;right:0!important;
+        }
+
+        // >>> *****************************************************************
+
+        // wenn left/top/right/bottom -nav=default oder front, dann navs nach
+        // aussen aussrichten
+        // info: diese attribute werden dynamisch(javascript) eingebunden
+        @each $item in default, front {
+            .sk-content[data-sk-left-opt="#{$item}"] { left:0 !important; }
+            .sk-content[data-sk-right-opt="#{$item}"] { right:0 !important; }
+            .sk-content[data-sk-top-opt="#{$item}"] { top:0 !important; }
+            .sk-content[data-sk-bottom-opt="#{$item}"] { bottom:0 !important; }
+        }
+
+        // >>> *****************************************************************
+
+        // wenn nur static angegeben dann nehmen alle ihre positionen ein und ändern sich nicht
+        .sk-content[data-sk-left-opt="static"] { left: map-get($positions, left) !important; }
+        .sk-content[data-sk-right-opt="static"] { right: map-get($positions, right) !important; }
+        .sk-content[data-sk-top-opt="static"] { top: map-get($positions, top) !important; }
+        .sk-content[data-sk-bottom-opt="static"] { bottom: map-get($positions, bottom) !important; }
+
+        // >>> *****************************************************************
+
+        // >>> static mit der z Achse vorziehen!
+
+        [data-sk-align="static"] { z-index: 10; }
+        [data-sk-align="default"], [data-sk-align="front"] { z-index:  9; }
+
+        // >>> wenn top-navi oder bottom-navi default ist und linke oder rechte navi static,
+        // dann muss linker/rechter navi top:0, bottom:0 gesetzt werden
+
+        .sk-left-nav[data-sk-top-opt="default"],
+        .sk-right-nav[data-sk-top-opt="default"]{
+            top:0;
+        }
+        .sk-left-nav[data-sk-bottom-opt="default"],
+        .sk-right-nav[data-sk-bottom-opt="default"] {
+            bottom:0;
+        }
+
+    }
+
+    // >>>  Handle until Media Queries sk-{position}-nav=static:until(n)
+
+    $map : $__skeleton-until-navs-as-hash__;
+
+    @if(type-of($map) == map or type-of($map) == list){
+
+        // >>> Start default until handle
+
+        @each $navigation, $size in $map {
+
+            .sk-#{$navigation}-nav[data-sk-align^="static:until"]{
+                #{$navigation} : 0;
+            }
+
+            @media (min-width: $size) {
+                .sk-content[data-sk-#{$navigation}-opt="static:until(#{$size})"] {
+                    #{$navigation}: map-get($positions, $navigation) !important;
+                }
+            }
+            @media (max-width: $size - 1px) {
+                .sk-content[data-sk-#{$navigation}-opt="static:until(#{$size})"] {
+                    #{$navigation}:0 !important;
+                }
+            }
+
+        }
+
+        // > special untils ( if top or bottom greater than left or right nav),
+
+        @each  $horizontal-nav in top, bottom {
+            @each $vertical-nav in left, right {
+                @if(map-has-key($map, $horizontal-nav) and map-has-key($map, $vertical-nav)){
+                    @if(map-get($map, $horizontal-nav) >= map-get($map, $vertical-nav)){
+                        @media (max-width: map-get($map, $horizontal-nav)) {
+                            .sk-left-nav {#{$horizontal-nav} : 0;}
+                            .sk-right-nav {#{$horizontal-nav} : 0;}
+                        }
+                    }
+                }
+
+            }
+        }
+
+        // >>> Start handle until and float
+
+        @each $navigation, $size in $map {
+
+            @if $navigation == left or $navigation == right {
+                .sk-#{$navigation}-nav[data-sk-align^="static:until"][data-sk-float]{
+                    top : 0; bottom: 0;
+                }
+                // > wird benötigt damit data-sk-float auch bei static werten seinen float platz einnimmt!
+                @each $item in left, right {
+                    // >>> wenn nur an der linken oder rechten navi data-sk-float angeben wurde
+                    .sk-top-nav[data-sk-align^="static"][data-sk-opt-float="#{$item}"] {
+                        #{$item} : map-get($positions, $item);
+                    }
+                    .sk-bottom-nav[data-sk-align^="static"][data-sk-opt-float="#{$item}"] {
+                        #{$item} : map-get($positions, $item);
+                    }
+                    // >>> wenn auf linker und rechter navi data-sk-float angegen wurde
+                    .sk-top-nav[data-sk-align^="static"][data-sk-opt-float="left,right"] {
+                        left: map-get($positions, left); right: map-get($positions, right);
+                    }
+                    .sk-bottom-nav[data-sk-align^="static"][data-sk-opt-float="left,right"] {
+                        left: map-get($positions, left); right: map-get($positions, right);
+                    }
+                }
+
+                // >>> left or right > top oder bottom ist!
+
+                @if( map-has-key($map, right) and map-has-key($map, top) ) {
+
+                    $right : map-get($map, right);
+                    $top   : map-get($map, top);
+
+                    @if $right > $top {
+                        @media (max-width: $right - 1) {
+                            .sk-top-nav[data-sk-opt-float],
+                            .sk-bottom-nav[data-sk-opt-float] {
+                                z-index: 11 !important; right : 0 !important;
+                            }
+                        }
+                    }
+
+                } @else if(map-has-key($map, right) and map-has-key($map, bottom)){
+
+            $right  : map-get($map, right);
+                $bottom : map-get($map, bottom);
+
+                @if $right > $bottom {
+                    @media (max-width: $right - 1) {
+                        .sk-top-nav[data-sk-opt-float],
+                        .sk-bottom-nav[data-sk-opt-float] {
+                            z-index: 11 !important; right : 0 !important;
+                        }
+                    }
+                }
+            }
+                @if( map-has-key($map, left) and map-has-key($map, top) ) {
+
+                    $left : map-get($map, left);
+                    $top  : map-get($map, top);
+
+                    @if $left > $top {
+                        @media (max-width: $left - 1) {
+                            .sk-top-nav[data-sk-opt-float],
+                            .sk-bottom-nav[data-sk-opt-float] {
+                                z-index: 11 !important; left : 0 !important;
+                            }
+                        }
+                    }
+
+                } @else if(map-has-key($map, left) and map-has-key($map, bottom)){
+
+        $left   : map-get($map, left);
+            $bottom : map-get($map, bottom);
+
+            @if $left > $bottom {
+                @media (max-width: $left - 1) {
+                    .sk-top-nav[data-sk-opt-float],
+                    .sk-bottom-nav[data-sk-opt-float] {
+                        z-index: 11 !important; left : 0 !important;
+                    }
+                }
+            }
+        }
+        }
+    }
+}
+
+}

@@ -24,6 +24,12 @@ var test = new SimpleUnitTest();
 new Skeleton(['--path', '../index.html'], {
     onReady : function(){
 
+        // settings
+        this.path = {
+            'skeleton' : '../scss/skeleton.scss',
+            'tmp_skeleton' : '../tmp/tmp-skeleton.scss'
+        };
+
         // >> match testing
 
         this.match(/foo/g, 'bar foo xbar')().done(function(data){
