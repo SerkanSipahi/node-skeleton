@@ -32,17 +32,15 @@ module.exports = function (grunt) {
             },
             src: {
                 files: '<%= jshint.main.src %>',
-                tasks: ['jshint:main', 'nodeunit']
+                tasks: ['jshint:main']
             },
             test: {
                 files: '<%= jshint.test.src %>',
-                tasks: ['jshint:test', 'nodeunit']
+                tasks: ['jshint:test']
             }
         }
     });
 
-  grunt.loadNpmTasks('grunt-jasmine-node');
-
   // Default task.
-  grunt.registerTask('default', ['jshint', 'nodeunit', 'watch']);
+  grunt.registerTask('default', ['jshint', 'watch']);
 };

@@ -13,6 +13,12 @@ var Skeleton = require('../node-skeleton.js'),
                 console.log(this.i+': ( '+describe+' )', 'fail, except:', except+' === tobe: '+tobe);
             }
             this.i++;
+        },
+        contain : function(item, array){
+
+        },
+        _consoleLog : function(){
+
         }
     };
 
@@ -20,11 +26,20 @@ var test = new SimpleUnitTest();
 
 
 // >>> !!! Tests bitte direkt( momentan ) in Webstorm ausführen( rechte Maustaste -> Run )
+/*
+var instance = new Skeleton(['--path', '../index.html']);
+instance.on('ready', function(){
 
+});
+instanece.compile();
+*/
 new Skeleton(['--path', '../index.html'], {
     onReady : function(){
 
         // settings
+
+        var self = this;
+
         this.path = {
             'skeleton' : '../scss/skeleton.scss',
             'tmp_skeleton' : '../tmp/tmp-skeleton.scss'
@@ -32,8 +47,8 @@ new Skeleton(['--path', '../index.html'], {
 
         // >> match testing
 
-        this.match(/foo/g, 'bar foo xbar')().done(function(data){
-            test.equal('foo', data[0], 'Testing match');
+        this.match(/foo/g, 'bar foo xbar', 0)().done(function(data){
+            test.equal('foo', data[0][0], 'Testing match');
         });
         this.match(/foo/g, 'bar foo xfoo')().done(function(data){
             test.equal(2, data.length, 'Testing match length');
@@ -42,10 +57,13 @@ new Skeleton(['--path', '../index.html'], {
         // >> binExists Testing
 
         this.binExists('sass')().done(function(data){
-            test.equal(true, data, 'bin Exists');
+            test.equal(true, data, 'sass bin Exists');
+        });
+        this.binExists('bower')().done(function(data){
+            test.equal(true, data, 'bower bin Exists');
         });
         this.binExists('chucky')().fail(function(data){
-            test.equal(false, data, 'bin not Exists');
+            test.equal(false, data, 'chucky bin not Exists');
         });
 
         // >> maxPassedArgs
@@ -71,12 +89,66 @@ new Skeleton(['--path', '../index.html'], {
             test.equal('FileNotFound, cant load [xxfixture_file.txt] file!', data, 'this.readFile on fail');
         });
 
+        // >> buildUntilHashIfNeeded
+
+        this.data.matched = [];
+        this.buildUntilHashIfNeeded()().done(function(data){
+            test.equal(null, data, 'buildUntilhashIfNeeded no hash');
+        });
+
+        this.data.matched = [ ['right', '700px']];
+        this.buildUntilHashIfNeeded()().done(function(data){
+            test.equal('(right : 700px)', data, 'buildUntilhashIfNeeded single hash');
+        });
+
+        this.data.matched = [
+            ['right', '700px'],
+            ['left', '500px'],
+            ['top', '50px'],
+            ['bottom', '100px']
+        ];
+        this.buildUntilHashIfNeeded()().done(function(data){
+            test.equal(
+                '( right : 700px, left : 500px, top : 50px, bottom : 100px )',
+                data, 'buildUntilhashIfNeeded multiple hash'
+            );
+        });
+
+        // > match until
+
+        var indexHTMLMock1 = '../test/htmlIndexMocks/index_fixture_1.html',
+            indexHTMLMock2 = '../test/htmlIndexMocks/index_fixture_2.html',
+            indexHTMLMock3 = '../test/htmlIndexMocks/index_fixture_3.html',
+            indexHTMLMock4 = '../test/htmlIndexMocks/index_fixture_4.html';
+
+
+        this.$.when(this.readFile(indexHTMLMock1)())
+            .then(function(data){
+                self.match(self.pattern, data, 1)().done(function(matched){
+                    console.log(matched);
+                });
+            });
+
+        this.$.when(this.readFile(indexHTMLMock2)())
+            .then(function(data){
+                self.match(self.pattern, data, 1)().done(function(matched){
+                    console.log(matched);
+                });
+            });
+
+        this.$.when(this.readFile(indexHTMLMock3)())
+            .then(function(data){
+                self.match(self.pattern, data, 1)().done(function(matched){
+                    console.log(matched);
+                });
+            });
+
+        this.$.when(this.readFile(indexHTMLMock4)())
+            .then(function(data){
+                self.match(self.pattern, data, 1)().done(function(matched){
+                    console.log(matched);
+                });
+            });
+
     }
 });
-
-exports.testSomething = function(test){
-    test.expect(1);
-    test.ok(true, "-----");
-    test.done();
-};
-

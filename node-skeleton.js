@@ -31,14 +31,18 @@
 
         self = this;
 
+        this.$ = {};
+        this.ready = false;
+
         this.args = arguments[0];
         this.callbacks = callbacks || {};
         this.pattern = /sk-(left|top|bottom|right)-nav(?:.*?)data-sk-align="static:until\((\d+px)\)"/gm;
 
         this.data = {
-            matched  : [],
-            skeleton : null,
-            htmlFile : null
+            matched   : null,
+            skeleton  : null,
+            htmlFile  : null,
+            untilHash : null
         };
         this.path = {
             'skeleton' : './scss/skeleton.scss',
@@ -54,7 +58,7 @@
         };
 
         env('-', function (errors, window) {
-            $ = require('jquery')(window);
+            this.$ = $ = require('jquery')(window);
             this.init();
             if(this.callbacks.onReady!==void(0)){
                 this.callbacks.onReady.call(this);
@@ -68,6 +72,8 @@
 
             $.when(true)
                 // > Checks / Inits
+                // > binExists optimieren, mehrere args
+                //   als array übergeben können
                 .then(self.binExists('bower'))
                 .then(self.binExists('sass'))
                 .then(self.maxPassedArgs(self.args, 2))
@@ -77,15 +83,14 @@
                  * */
                 .then(self.checkAndSetPassedArgs())
                 .then(self.mkdirp('tmp'))
-                .then(self.writeFile(self.path.tmp_skeleton))
-                .then(function(){
-                    return self.readFile(self.path.htmlFile)().done(function(data){
-                        self.data.htmlFile = data;
-                    });
-                })
                 .then(function(){
                     return self.readFile(self.path.skeleton)().done(function(data){
                         self.data.skeleton = data;
+                    });
+                })
+                .then(function(){
+                    return self.readFile(self.path.htmlFile)().done(function(data){
+                        self.data.htmlFile = data;
                     });
                 })
                 // > Business-Logic
@@ -94,6 +99,12 @@
                         self.data.matched = matched;
                     });
                 })
+                .then(self.buildUntilHashIfNeeded())
+                .then(self.ifAnyHashReplacePlaceholder())
+                .then(function(data){
+                    return self.writeFile(self.path.tmp_skeleton, data)()
+                })
+
             .fail(function(value){
                 console.log('fail,', value);
             })
@@ -103,7 +114,10 @@
             });
         },
 
-        // > Business-Logic Methods
+        // > Checks / Inits / Logic
+        compile : function(destination){
+
+        },
         checkAndSetPassedArgs : function(){
 
             return function(){
@@ -117,8 +131,47 @@
                     }
                 });
             };
-        },
 
+        },
+        buildUntilHashIfNeeded : function(){
+
+            return function(){
+                return $.Deferred(function(dfd){
+
+                    var hashContainer = [],
+                        length = self.data.matched.length,
+                        matched = self.data.matched;
+
+                    if(length===1){
+                        self.data.untilHash = '('+matched[0].join(' ').replace(' ', ' : ') + ')';
+                    } else if(length>1) {
+                        matched.forEach(function(element){
+                            hashContainer.push(element.join(' : '));
+                        });
+                        self.data.untilHash = '( '+hashContainer.join(', ') + ' )';
+                    }
+
+                    dfd.resolve(self.data.untilHash);
+                });
+            };
+
+        },
+        ifAnyHashReplacePlaceholder : function(){
+
+            return function(){
+                return $.Deferred(function(dfd){
+                    if(self.data.matched.length){
+                        self.data.skeleton = self.data.skeleton.replace(/[^$](__skeleton-until-navs-as-hash__)/gmi, function(match, p1){
+                            var res = '', bool;
+                            bool = p1==='__skeleton-until-navs-as-hash__' ? res = self.data.untilHash : null;
+                            return res;
+                        });
+                    }
+                    dfd.resolve(self.data.skeleton);
+                });
+            };
+
+        },
         // > Helper-Promise Methods
         binExists : function(bin){
 
