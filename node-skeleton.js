@@ -25,14 +25,32 @@
          **/
         ncp    = require('ncp').ncp,
         env    = require('jsdom').env,
-        $      = {};
+        $      = {},
+
+        capitalize = function(value) {
+            return value.charAt(0).toUpperCase() + value.slice(1);
+        };
 
     function NodeSkeleton(undefined, callbacks){
 
         self = this;
 
         this.$ = {};
+        this.name = 'skeleton';
+
+        /*
+         * wenn alle nötigen parameter initialisiert sind,
+         * aber nicht komplett abgeschlossen.
+         * */
         this.ready = false;
+        this.readyCallback = callbacks.onReady || void(0);
+
+        /*
+         * wenn alle nötigen parameter initialisiert sind,
+         * ubd alles komplett abgeschlossen.
+         * */
+        this.complete = false;
+        this.completeCallback = callbacks.onComplete || void(0);
 
         this.args = arguments[0];
         this.callbacks = callbacks || {};
@@ -46,6 +64,7 @@
         };
         this.path = {
             'skeleton' : './scss/skeleton.scss',
+            'tmp' : 'tmp',
             'tmp_skeleton' : './tmp/tmp-skeleton.scss',
             'htmlFile' : ''
         };
@@ -58,11 +77,12 @@
         };
 
         env('-', function (errors, window) {
+            this.ready = true;
             this.$ = $ = require('jquery')(window);
-            this.init();
-            if(this.callbacks.onReady!==void(0)){
-                this.callbacks.onReady.call(this);
+            if(this.readyCallback!==void(0)){
+                this.readyCallback.call(this);
             }
+            this.init(); // init von außen aufrufen
         }.bind(this));
 
     }
@@ -82,7 +102,7 @@
                  * https://www.npmjs.org/package/commander
                  * */
                 .then(self.checkAndSetPassedArgs())
-                .then(self.mkdirp('tmp'))
+                .then(self.mkdirp(this.path.tmp))
                 .then(function(){
                     return self.readFile(self.path.skeleton)().done(function(data){
                         self.data.skeleton = data;
@@ -102,20 +122,31 @@
                 .then(self.buildUntilHashIfNeeded())
                 .then(self.ifAnyHashReplacePlaceholder())
                 .then(function(data){
-                    return self.writeFile(self.path.tmp_skeleton, data)()
+                    return self.writeFile(self.path.tmp_skeleton, data)();
                 })
 
             .fail(function(value){
                 console.log('fail,', value);
             })
             .done(function(result){
-                //console.log(result);
-                //console.log('all done');
-            });
+                this.complete = true;
+                if(this.completeCallback!==void(0)){
+                    this.completeCallback.call(this);
+                }
+            }.bind(this));
         },
 
-        // > Checks / Inits / Logic
-        compile : function(destination){
+        on : function(value, callback){
+            this._callbackHandler(value, callback);
+        },
+        _callbackHandler : function(value, callback){
+
+            // > bitte kommentieren
+            if(!this[value]){
+                this[value+'Callback'] = callback;
+            } else {
+                callback.call(this);
+            }
 
         },
         checkAndSetPassedArgs : function(){
@@ -150,7 +181,6 @@
                         });
                         self.data.untilHash = '( '+hashContainer.join(', ') + ' )';
                     }
-
                     dfd.resolve(self.data.untilHash);
                 });
             };

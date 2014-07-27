@@ -28,10 +28,13 @@ var test = new SimpleUnitTest();
 // >>> !!! Tests bitte direkt( momentan ) in Webstorm ausführen( rechte Maustaste -> Run )
 /*
 var instance = new Skeleton(['--path', '../index.html']);
+
 instance.on('ready', function(){
 
 });
-instanece.compile();
+instance.on('complete', function(){
+    this.compile();
+});
 */
 new Skeleton(['--path', '../index.html'], {
     onReady : function(){
@@ -42,7 +45,8 @@ new Skeleton(['--path', '../index.html'], {
 
         this.path = {
             'skeleton' : '../scss/skeleton.scss',
-            'tmp_skeleton' : '../tmp/tmp-skeleton.scss'
+            'tmp_skeleton' : '../tmp/tmp-skeleton.scss',
+            'tmp' : '../tmp'
         };
 
         // >> match testing
