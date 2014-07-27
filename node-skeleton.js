@@ -27,11 +27,32 @@
         env    = require('jsdom').env,
         $      = {},
 
+        // > Helper-Functions
         capitalize = function(value) {
             return value.charAt(0).toUpperCase() + value.slice(1);
+        },
+        type = function(o){
+            return Object.prototype.toString.call(o).slice(8, -1).toLowerCase();
+        },
+        extend = function(that, override, parent){
+
+            if(type(that)!=='object') { return; }
+
+            for(var item in that){
+                if(!that.hasOwnProperty(item)){ continue; }
+                if(type(that[item])!=='object'){
+                    if(parent!==void(0)){
+                        override[parent][item] = that[item];
+                    } else {
+                        override[item] = that[item];
+                    }
+                } else {
+                    extend(that[item], override, item)
+                }
+            }
         };
 
-    function NodeSkeleton(undefined, callbacks){
+    function NodeSkeleton(undefined, object){
 
         self = this;
 
@@ -43,17 +64,16 @@
          * aber nicht komplett abgeschlossen.
          * */
         this.ready = false;
-        this.readyCallback = callbacks.onReady || void(0);
+        this.onReady = void(0); // eventuell als function(){} vorbelegen;
 
         /*
          * wenn alle nötigen parameter initialisiert sind,
          * ubd alles komplett abgeschlossen.
          * */
         this.complete = false;
-        this.completeCallback = callbacks.onComplete || void(0);
+        this.onComplete = void(0); // eventuell als function(){} vorbelegen;
 
         this.args = arguments[0];
-        this.callbacks = callbacks || {};
         this.pattern = /sk-(left|top|bottom|right)-nav(?:.*?)data-sk-align="static:until\((\d+px)\)"/gm;
 
         this.data = {
@@ -76,11 +96,13 @@
 
         };
 
+        extend(object, this);
+
         env('-', function (errors, window) {
             this.ready = true;
             this.$ = $ = require('jquery')(window);
-            if(this.readyCallback!==void(0)){
-                this.readyCallback.call(this);
+            if(this.onReady!==void(0)){
+                this.onReady.call(this);
             }
             this.init(); // init von außen aufrufen
         }.bind(this));
@@ -130,8 +152,8 @@
             })
             .done(function(result){
                 this.complete = true;
-                if(this.completeCallback!==void(0)){
-                    this.completeCallback.call(this);
+                if(this.onComplete!==void(0)){
+                    this.onComplete.call(this);
                 }
             }.bind(this));
         },
@@ -141,9 +163,8 @@
         },
         _callbackHandler : function(value, callback){
 
-            // > bitte kommentieren
             if(!this[value]){
-                this[value+'Callback'] = callback;
+                this['on'+capitalize(value)] = callback;
             } else {
                 callback.call(this);
             }
