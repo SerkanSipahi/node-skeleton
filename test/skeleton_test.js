@@ -24,18 +24,6 @@ var Skeleton = require('../node-skeleton.js'),
 
 var test = new SimpleUnitTest();
 
-
-// >>> !!! Tests bitte direkt( momentan ) in Webstorm ausführen( rechte Maustaste -> Run )
-/*
-var instance = new Skeleton(['--path', '../index.html']);
-
-instance.on('ready', function(){
-
-});
-instance.on('complete', function(){
-    this.compile();
-});
-*/
 new Skeleton(['--path', '../index.html'], {
     onReady : function(){
 

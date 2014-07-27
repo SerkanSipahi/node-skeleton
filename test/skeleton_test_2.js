@@ -24,25 +24,12 @@ SimpleUnitTest.prototype = {
 
 var test = new SimpleUnitTest();
 
-
-// >>> !!! Tests bitte direkt( momentan ) in Webstorm ausführen( rechte Maustaste -> Run )
-/*
- var instance = new Skeleton(['--path', '../index.html']);
-
- instance.on('ready', function(){
-
- });
- instance.on('complete', function(){
- this.compile();
- });
- */
-
 var skeleton = new Skeleton(['--path', '../index.html'], {
     'onReady' : function(){
-
+        console.log('onReady')
     },
     'onComplete' : function(){
-
+        console.log('onComplete');
     },
     'path' : {
         'skeleton' : '../scss/skeleton.scss',
@@ -50,3 +37,5 @@ var skeleton = new Skeleton(['--path', '../index.html'], {
         'tmp' : '../tmp'
     }}
 );
+
+skeleton.compile();

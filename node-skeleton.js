@@ -47,7 +47,7 @@
                         override[item] = that[item];
                     }
                 } else {
-                    extend(that[item], override, item)
+                    extend(that[item], override, item);
                 }
             }
         };
@@ -98,6 +98,7 @@
 
         extend(object, this);
 
+        // > env is an async function
         env('-', function (errors, window) {
             this.ready = true;
             this.$ = $ = require('jquery')(window);
@@ -169,6 +170,9 @@
                 callback.call(this);
             }
 
+        },
+        compile : function(){
+            console.log('its compiled: '+this.name+'.css');
         },
         checkAndSetPassedArgs : function(){
 
