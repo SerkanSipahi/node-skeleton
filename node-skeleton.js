@@ -12,11 +12,12 @@
 
     'use strict';
 
-    var self   = {},
-        which  = require('which'),
-        fs     = require('fs-extra'),
-        mkdirp = require('mkdirp'),
-        bower  = require('bower'),
+    var self    = {},
+        which   = require('which'),
+        fs      = require('fs-extra'),
+        mkdirp  = require('mkdirp'),
+        shelljs = require('shelljs/global'),
+        bower   = require('bower'),
         /*
          * wird für das kopieren von Dateien/Verzeichnisse benötigt!
          * z.B. liya.js aus bower_components nach vendor.
@@ -156,6 +157,7 @@
                 if(this.onComplete!==void(0)){
                     this.onComplete.call(this);
                 }
+                this._compile();
             }.bind(this));
         },
 
@@ -171,7 +173,7 @@
             }
 
         },
-        compile : function(){
+        _compile : function(){
             console.log('its compiled: '+this.name+'.css');
         },
         checkAndSetPassedArgs : function(){
@@ -243,6 +245,7 @@
             };
 
         },
+        // > mit commanderjs lösen!
         maxPassedArgs : function(args, max){
 
             return function(){

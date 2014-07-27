@@ -11,7 +11,6 @@ var instance = new Skeleton(['--path', '../index.html'],{
 });
 instance.on('complete', function(){
     console.log('onComplete');
-    this.compile();
 });
 
 instance.on('ready', function(){
