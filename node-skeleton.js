@@ -12,12 +12,13 @@
 
     'use strict';
 
-    var self    = {},
-        which   = require('which'),
-        fs      = require('fs-extra'),
-        mkdirp  = require('mkdirp'),
-        shelljs = require('shelljs/global'),
-        bower   = require('bower'),
+    var self         = {},
+        which        = require('which'),
+        fs           = require('fs-extra'),
+        mkdirp       = require('mkdirp'),
+        shelljs      = require('shelljs/global'),
+        bower        = require('bower'),
+        cli_skeleton = require('commander'),
         /*
          * wird für das kopieren von Dateien/Verzeichnisse benötigt!
          * z.B. liya.js aus bower_components nach vendor.
@@ -53,28 +54,38 @@
             }
         };
 
-    function NodeSkeleton(undefined, object){
+    function NodeSkeleton(object){
 
         self = this;
 
-        this.$ = {};
         this.name = 'skeleton';
+
+        // > settings
+        this.watch  = false;
+        this.minify = false;
+        this.path = {
+            'skeleton'     : '',
+            'tmp'          : '',
+            'tmp_skeleton' : '',
+            'htmlFile'     : ''
+        };
+
+        this.$ = {};
 
         /*
          * wenn alle nötigen parameter initialisiert sind,
-         * aber nicht komplett abgeschlossen.
+         * aber nicht komplett( befor init() augerufen wird ) abgeschlossen.
          * */
         this.ready = false;
         this.onReady = void(0); // eventuell als function(){} vorbelegen;
 
         /*
          * wenn alle nötigen parameter initialisiert sind,
-         * ubd alles komplett abgeschlossen.
+         * alles(then()) komplett abgeschlossen.
          * */
         this.complete = false;
         this.onComplete = void(0); // eventuell als function(){} vorbelegen;
 
-        this.args = arguments[0];
         this.pattern = /sk-(left|top|bottom|right)-nav(?:.*?)data-sk-align="static:until\((\d+px)\)"/gm;
 
         this.data = {
@@ -83,16 +94,7 @@
             htmlFile  : null,
             untilHash : null
         };
-        this.path = {
-            'skeleton' : './scss/skeleton.scss',
-            'tmp' : 'tmp',
-            'tmp_skeleton' : './tmp/tmp-skeleton.scss',
-            'htmlFile' : ''
-        };
-        this.cmd = {
-            '--path' : true,
-            '--show' : true
-        };
+
         this.errorMessages = {
 
         };
@@ -101,12 +103,26 @@
 
         // > env is an async function
         env('-', function (errors, window) {
+
             this.ready = true;
             this.$ = $ = require('jquery')(window);
+
             if(this.onReady!==void(0)){
                 this.onReady.call(this);
             }
-            this.init(); // init von außen aufrufen
+
+            /*
+             * Wenn über Konstruktor keine Argumente
+             * übergeben werden, kann das init() nicht
+             * aufgerufen werden!
+             *
+             * Argumente können über die setter Methoden
+             * übergen werden. Init() muss dann manuell
+             * angestossen werden.
+             *
+             **/
+            !object===void(0) ? this.init() : null;
+
         }.bind(this));
 
     }
@@ -120,13 +136,8 @@
                 //   als array übergeben können
                 .then(self.binExists('bower'))
                 .then(self.binExists('sass'))
-                .then(self.maxPassedArgs(self.args, 2))
-                /*
-                 * Wenn folgendes implementieren:
-                 * https://www.npmjs.org/package/commander
-                 * */
-                .then(self.checkAndSetPassedArgs())
-                .then(self.mkdirp(this.path.tmp))
+                .then(self.coreHTMLFileExists())
+                .then(self.mkdirp(this.path.tmp)) //> absoluten path übergeben weil mkdirp /bar/bar/foo.txt erzeugen kann! also mit verzeichenissen!
                 .then(function(){
                     return self.readFile(self.path.skeleton)().done(function(data){
                         self.data.skeleton = data;
@@ -176,17 +187,13 @@
         _compile : function(){
             console.log('its compiled: '+this.name+'.css');
         },
-        checkAndSetPassedArgs : function(){
+        coreHTMLFileExists : function(){
 
             return function(){
                 return $.Deferred(function(dfd){
-                    if(!self.cmd[self.args[0]]){
-                        dfd.reject('Ungültiger Parameter: ' + self.args[0]);
-                    } else {
-                        self.readFile(self.args[1])().done(function(){
-                            self.path.htmlFile = self.args[1]; dfd.resolve();
-                        }).fail(function(){dfd.reject('FileNotFound, cant load [' + self.args[1] + '] file!');});
-                    }
+                    self.readFile(self.path.htmlFile)().done(function(){
+                        dfd.resolve();
+                    }).fail(function(){dfd.reject('FileNotFound, cant load [' + self.path.htmlFile + '] file!');});
                 });
             };
 
@@ -229,6 +236,7 @@
             };
 
         },
+
         // > Helper-Promise Methods
         binExists : function(bin){
 
@@ -241,20 +249,6 @@
                         message = 'Please Install Sass'; resolved=false;
                     }
                     foo = resolved ? dfd.resolve(true) : dfd.reject(false);
-                });
-            };
-
-        },
-        // > mit commanderjs lösen!
-        maxPassedArgs : function(args, max){
-
-            return function(){
-                return $.Deferred(function(dfd){
-                    args = args || [];
-                    if(args.length!==max){
-                        dfd.reject('Sie müssen mindestens '+max+' Parameter übergeben z.B. index.html --path');
-                    }
-                    dfd.resolve(true);
                 });
             };
 
@@ -338,11 +332,46 @@
                 });
             };
 
+        },
+
+        setHtmlfilePath : function(value){
+            this.path.htmlFile = value; return this;
+        },
+        setSkeletonPath : function(value){
+            this.path.skeleton = value; return this;
+        },
+        setTmpSkeletonPath : function(value){
+            this.path.tmp_skeleton = value; return this;
+        },
+        setWatch : function(value){
+            this.watch = value; return this;
+        },
+        setMinify : function(value){
+            this.minify = value; return this;
         }
+
     };
 
+    cli_skeleton
+        .version('0.0.1')
+        .usage('[options] <file ...>')
+        .option('-i, --install', 'install skeleton')
+        .option('-p, --path <source>, <default> index.html', 'source to configured html file')
+        .option('-w, --watch', 'watch file')
+        .option('-m, --minify', 'minify generated file')
+        .parse(process.argv);
+
     if(require.main === module) {
-        new NodeSkeleton(process.argv.slice(2));
+        new NodeSkeleton({
+            watch : cli_skeleton.watch || false,
+            minify : cli_skeleton.minify || false,
+            path : {
+                'htmlFile' : cli_skeleton.path || 'index.html',
+                'skeleton' : cli_skeleton.skeletonSassPath || './scss/skeleton.scss',
+                'tmp_skeleton' : cli_skeleton.skeletonTmpSassPath || './tmp/tmp-skeleton.scss',
+                'tmp' : cli_skeleton.tmpPath || 'tmp' // >> kann eventuell raus, DRY !!!
+            }
+        });
     } else {
         module.exports = NodeSkeleton;
     }
