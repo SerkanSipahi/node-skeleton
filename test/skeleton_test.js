@@ -24,7 +24,7 @@ var Skeleton = require('../node-skeleton.js'),
 
 var test = new SimpleUnitTest();
 
-new Skeleton(['--path', '../index.html'], {
+new Skeleton({
     onReady : function(){
 
         // settings
@@ -32,6 +32,7 @@ new Skeleton(['--path', '../index.html'], {
         var self = this;
 
         this.path = {
+            'htmlFile' : '../index.html',
             'skeleton' : '../scss/skeleton.scss',
             'tmp_skeleton' : '../tmp/tmp-skeleton.scss',
             'tmp' : '../tmp'

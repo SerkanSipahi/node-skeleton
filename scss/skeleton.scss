@@ -13,7 +13,7 @@
     .sk-right-nav,
     .sk-bottom-nav,
     .sk-content {
-        @include transition(all 250ms ease-in-out);
+        //@include transition(all 250ms ease-in-out);
     }
 };
 
@@ -29,13 +29,13 @@
  */
 // >>> Custom Menus //
 #skeleton {
-    .sk-menu-foo-L  { width: 200px; background-color: lighten(#000000, 10%); }
-    .sk-menu-lool-L { width: 250px; background-color: lighten(#000000, 20%); }
-    .sk-menu-cool-L { width: 300px; background-color: lighten(#000000, 30%); }
+    .sk-menu-foo-L  { width: 200px; background-color: blue/*lighten(#000000, 10%)*/; }
+    .sk-menu-lool-L { width: 250px; background-color: red/*lighten(#000000, 20%)*/; }
+    .sk-menu-cool-L { width: 300px; background-color: green/*lighten(#000000, 30%)*/; }
 
-    .sk-menu-foo-B  { height:  50px; background-color: lighten(#000000, 40%); }
-    .sk-menu-lool-B { height: 100px; background-color: lighten(#000000, 50%); }
-    .sk-menu-cool-B { height: 150px; background-color: lighten(#000000, 60%); }
+    .sk-menu-foo-B  { height:  50px; background-color: yellow/*lighten(#000000, 40%)*/; }
+    .sk-menu-lool-B { height: 100px; background-color: pink/*lighten(#000000, 50%)*/; }
+    .sk-menu-cool-B { height: 150px; background-color: gray/*lighten(#000000, 60%)*/; }
 }
 /////////////////////
 

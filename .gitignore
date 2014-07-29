@@ -1,3 +1,6 @@
+.sass-cache
+skeleton.css
+skeleton.min.css
 tmp
 .idea/
 /node_modules/

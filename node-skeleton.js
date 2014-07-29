@@ -121,7 +121,7 @@
              * angestossen werden.
              *
              **/
-            !object===void(0) ? this.init() : null;
+            var res = type(object)==='object' ? this.init() : null;
 
         }.bind(this));
 
@@ -168,7 +168,7 @@
                 if(this.onComplete!==void(0)){
                     this.onComplete.call(this);
                 }
-                this._compile();
+                this._finally();
             }.bind(this));
         },
 
@@ -183,9 +183,6 @@
                 callback.call(this);
             }
 
-        },
-        _compile : function(){
-            console.log('its compiled: '+this.name+'.css');
         },
         coreHTMLFileExists : function(){
 
@@ -348,6 +345,21 @@
         },
         setMinify : function(value){
             this.minify = value; return this;
+        },
+
+        _watchIfNeeded : function(){},
+        _minifyIfNeeded : function(){},
+        _compile : function(){
+            exec('sass '+this.path.tmp_skeleton+' '+this.name+'.css', function(code, output) {
+                if(code===1) { console.log('Error:', code); return; }
+                console.log('Program output:', output);
+            }.bind(this));
+        },
+
+        _finally : function(){
+            this._watchIfNeeded();
+            this._minifyIfNeeded();
+            this._compile();
         }
 
     };
@@ -370,6 +382,12 @@
                 'skeleton' : cli_skeleton.skeletonSassPath || './scss/skeleton.scss',
                 'tmp_skeleton' : cli_skeleton.skeletonTmpSassPath || './tmp/tmp-skeleton.scss',
                 'tmp' : cli_skeleton.tmpPath || 'tmp' // >> kann eventuell raus, DRY !!!
+            },
+            'onReady' : function(){
+                console.log('ready');
+            },
+            'onComplete' : function(){
+                console.log('complete');
             }
         });
     } else {
