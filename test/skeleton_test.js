@@ -31,11 +31,12 @@ new Skeleton({
 
         var self = this;
 
+        this.base = '../';
         this.path = {
-            'htmlFile' : '../index.html',
-            'skeleton' : '../scss/skeleton.scss',
-            'tmp_skeleton' : '../tmp/tmp-skeleton.scss',
-            'tmp' : '../tmp'
+            htmlFile : 'index.html',
+            skeleton : 'scss/skeleton.scss',
+            tmp_skeleton : 'tmp/tmp-skeleton.scss',
+            tmp : 'tmp'
         };
 
         // >> match testing
@@ -57,19 +58,6 @@ new Skeleton({
         });
         this.binExists('chucky')().fail(function(data){
             test.equal(false, data, 'chucky bin not Exists');
-        });
-
-        // >> maxPassedArgs
-
-        this.maxPassedArgs(['foo', 'bar', 'bubu'], 3)().done(function(arg){
-            test.equal(true, arg, 'maxPassedArgs on successful');
-        });
-
-        this.maxPassedArgs(['foo', 'bar'], 3)().fail(function(arg){
-            test.equal(
-                'Sie müssen mindestens 3 Parameter übergeben z.B. index.html --path', arg,
-                'maxPassedArgs on fail'
-            );
         });
 
         // >> readFile

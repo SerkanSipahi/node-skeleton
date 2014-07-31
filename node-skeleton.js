@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 
 /*
- * skeleton
+ * TODO: skeleton nach menuility umbenennen
  * https://github.com/SerkanSipahi/skeleton
  *
  * Copyright (c) 2014 Serkan Sipahi
@@ -59,11 +59,15 @@
         self = this;
 
         this.name = 'skeleton';
+        this.object = object;
 
         // > settings
         this.watch  = false;
         this.minify = false;
+
+        this.base = '';
         this.path = {
+            'base'         : '',
             'skeleton'     : '',
             'tmp'          : '',
             'tmp_skeleton' : '',
@@ -103,7 +107,6 @@
 
         // > env is an async function
         env('-', function (errors, window) {
-
             this.ready = true;
             this.$ = $ = require('jquery')(window);
 
@@ -111,17 +114,7 @@
                 this.onReady.call(this);
             }
 
-            /*
-             * Wenn über Konstruktor keine Argumente
-             * übergeben werden, kann das init() nicht
-             * aufgerufen werden!
-             *
-             * Argumente können über die setter Methoden
-             * übergen werden. Init() muss dann manuell
-             * angestossen werden.
-             *
-             **/
-            var res = type(object)==='object' ? this.init() : null;
+            this.init();
 
         }.bind(this));
 
@@ -137,7 +130,7 @@
                 .then(self.binExists('bower'))
                 .then(self.binExists('sass'))
                 .then(self.coreHTMLFileExists())
-                .then(self.mkdirp(this.path.tmp)) //> absoluten path übergeben weil mkdirp /bar/bar/foo.txt erzeugen kann! also mit verzeichenissen!
+                .then(self.mkdirp(this.path.tmp))
                 .then(function(){
                     return self.readFile(self.path.skeleton)().done(function(data){
                         self.data.skeleton = data;
@@ -319,49 +312,20 @@
             };
 
         },
-        wait : function(time){
-
-            return function(){
-                return $.Deferred(function(dfd){
-                    setTimeout(function(){
-                        dfd.resolve(time);
-                    }, time);
-                });
-            };
-
-        },
-
-        setHtmlfilePath : function(value){
-            this.path.htmlFile = value; return this;
-        },
-        setSkeletonPath : function(value){
-            this.path.skeleton = value; return this;
-        },
-        setTmpSkeletonPath : function(value){
-            this.path.tmp_skeleton = value; return this;
-        },
-        setWatch : function(value){
-            this.watch = value; return this;
-        },
-        setMinify : function(value){
-            this.minify = value; return this;
-        },
 
         _watchIfNeeded : function(){},
         _minifyIfNeeded : function(){},
         _compile : function(){
-            exec('sass '+this.path.tmp_skeleton+' '+this.name+'.css', function(code, output) {
+            exec('sass '+this.path.tmp_skeleton+' '+this.name+'.css', function(code) {
                 if(code===1) { console.log('Error:', code); return; }
-                console.log('Program output:', output);
+                console.log('compiled');
             }.bind(this));
         },
-
         _finally : function(){
             this._watchIfNeeded();
             this._minifyIfNeeded();
             this._compile();
         }
-
     };
 
     cli_skeleton
@@ -369,6 +333,7 @@
         .usage('[options] <file ...>')
         .option('-i, --install', 'install skeleton')
         .option('-p, --path <source>, <default> index.html', 'source to configured html file')
+        .option('-b, --base', 'base path')
         .option('-w, --watch', 'watch file')
         .option('-m, --minify', 'minify generated file')
         .parse(process.argv);
@@ -377,11 +342,12 @@
         new NodeSkeleton({
             watch : cli_skeleton.watch || false,
             minify : cli_skeleton.minify || false,
+            base : cli_skeleton.path || '',
             path : {
-                'htmlFile' : cli_skeleton.path || 'index.html',
+                'htmlFile' : cli_skeleton.path || './index.html',
                 'skeleton' : cli_skeleton.skeletonSassPath || './scss/skeleton.scss',
-                'tmp_skeleton' : cli_skeleton.skeletonTmpSassPath || './tmp/tmp-skeleton.scss',
-                'tmp' : cli_skeleton.tmpPath || 'tmp' // >> kann eventuell raus, DRY !!!
+                'tmp' : cli_skeleton.tmpPath || 'tmp',
+                'tmp_skeleton' : cli_skeleton.skeletonTmpSassPath || './tmp/tmp-skeleton.scss'
             },
             'onReady' : function(){
                 console.log('ready');
