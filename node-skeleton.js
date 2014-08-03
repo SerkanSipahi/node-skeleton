@@ -13,21 +13,19 @@
     'use strict';
 
     var self         = {},
+        $            = {},
         which        = require('which'),
         fs           = require('fs-extra'),
         mkdirp       = require('mkdirp'),
         shelljs      = require('shelljs/global'),
         bower        = require('bower'),
         cli_skeleton = require('commander'),
-        /*
-         * wird für das kopieren von Dateien/Verzeichnisse benötigt!
-         * z.B. liya.js aus bower_components nach vendor.
-         * liya.js wird in browser-node benötigt
-         *
-         **/
-        ncp    = require('ncp').ncp,
-        env    = require('jsdom').env,
-        $      = {},
+        ncp          = require('ncp').ncp,
+        env          = require('jsdom').env,
+        path         = require('path'),
+        childProcess = require('child_process'),
+        phantomjs    = require('phantomjs'),
+        binPath      = phantomjs.path,
 
         // > Helper-Functions
         capitalize = function(value) {
@@ -67,7 +65,6 @@
 
         this.base = '';
         this.path = {
-            'base'         : '',
             'skeleton'     : '',
             'tmp'          : '',
             'tmp_skeleton' : '',
@@ -76,19 +73,11 @@
 
         this.$ = {};
 
-        /*
-         * wenn alle nötigen parameter initialisiert sind,
-         * aber nicht komplett( befor init() augerufen wird ) abgeschlossen.
-         * */
         this.ready = false;
-        this.onReady = void(0); // eventuell als function(){} vorbelegen;
+        this.onReady = void(0);
 
-        /*
-         * wenn alle nötigen parameter initialisiert sind,
-         * alles(then()) komplett abgeschlossen.
-         * */
         this.complete = false;
-        this.onComplete = void(0); // eventuell als function(){} vorbelegen;
+        this.onComplete = void(0);
 
         this.pattern = /sk-(left|top|bottom|right)-nav(?:.*?)data-sk-align="static:until\((\d+px)\)"/gm;
 
@@ -124,9 +113,6 @@
         init : function(){
 
             $.when(true)
-                // > Checks / Inits
-                // > binExists optimieren, mehrere args
-                //   als array übergeben können
                 .then(self.binExists('bower'))
                 .then(self.binExists('sass'))
                 .then(self.coreHTMLFileExists())
@@ -141,7 +127,6 @@
                         self.data.htmlFile = data;
                     });
                 })
-                // > Business-Logic
                 .then(function(){
                     return self.match(self.pattern, self.data.htmlFile, 1)().done(function(matched){
                         self.data.matched = matched;
@@ -152,6 +137,9 @@
                 .then(function(data){
                     return self.writeFile(self.path.tmp_skeleton, data)();
                 })
+                .then(self.compileSkeleton())
+                .then(self.createServerAndServeOnRequest(self.path.htmlFile))
+                .then(self.browserOpen('localhost:1502'))
 
             .fail(function(value){
                 console.log('fail,', value);
@@ -162,6 +150,18 @@
                     this.onComplete.call(this);
                 }
                 this._finally();
+                /*
+                var childArgs = [
+                    path.join(__dirname, 'test/phantom/test_phantom.js'),
+                    'some other argument (passed to phantomjs script)'
+                ];
+
+                childProcess.execFile(binPath, childArgs, function(err, stdout, stderr) {
+                    console.log('err', err);
+                    console.log('stdout', stdout);
+                    console.log('stderr', stderr);
+                })
+                */
             }.bind(this));
         },
 
@@ -226,7 +226,27 @@
             };
 
         },
-
+        compileSkeleton : function(){
+            return function(){
+                return $.Deferred(function(dfd){
+                    dfd.resolve(true);
+                });
+            };
+        },
+        createServerAndServeOnRequest : function(serve){
+            return function(){
+                return $.Deferred(function(dfd){
+                    dfd.resolve(true);
+                });
+            };
+        },
+        browserOpen : function(){
+            return function(){
+                return $.Deferred(function(dfd){
+                    dfd.resolve(true);
+                });
+            };
+        },
         // > Helper-Promise Methods
         binExists : function(bin){
 
@@ -259,7 +279,11 @@
 
         },
         copy : function(source, destination){
-
+            return function(){
+                return $.Deferred(function(dfd){
+                    dfd.resolve(true);
+                });
+            };
         },
         mkdirp : function(path){
 
@@ -336,12 +360,16 @@
         .option('-b, --base', 'base path')
         .option('-w, --watch', 'watch file')
         .option('-m, --minify', 'minify generated file')
+        .option('-n, --normalize', 'normalize css')
         .parse(process.argv);
 
     if(require.main === module) {
         new NodeSkeleton({
+            // > TODO: muss noch eingebaut werden
+            normalizeCss : cli_skeleton.normalize || false,
             watch : cli_skeleton.watch || false,
             minify : cli_skeleton.minify || false,
+            // > FIXME: base path funktioniert nicht
             base : cli_skeleton.path || '',
             path : {
                 'htmlFile' : cli_skeleton.path || './index.html',
@@ -354,6 +382,9 @@
             },
             'onComplete' : function(){
                 console.log('complete');
+            },
+            'onRender' : function(){
+
             }
         });
     } else {
