@@ -15,13 +15,14 @@
         this.currentUrl = null;
         this.tempateVars = {};
         this.contentType = options['Content-Type'] || 'text/html';
+        // > wie bei cakephp
+        this.request = {};
         this.requests = { get : {}, post : {} };
 
-        this._initServer();
-        this._initDispatcher();
+        this._init();
 
     }
-    
+
     Webserver.prototype = {
         // > public
         get : function(url, callback){
@@ -37,18 +38,23 @@
 
         },
         // > private
+        _init : function(){
+            this._initServer();
+            this._initDispatcher();
+        },
         _initServer : function(){
             this.http = http.createServer().listen(1502);
         },
         _initDispatcher : function(){
             this.http.on('request', function(req, res){
 
-                res.writeHead(200, {'Content-Type': this.contentType});
+                this.currentUrl = url;
+                this.response   = res;
+
                 var method = this.requests[req.method.toLowerCase()],
                     url    = this.requests[req.method.toLowerCase()][req.url];
 
-                this.currentUrl = url;
-                this.response   = res;
+                res.writeHead(200, {'Content-Type': this.contentType});
 
                 if(method!==void(0) && url!==void(0)){
                     this.requests[req.method.toLowerCase()][req.url].call(this, res);
@@ -56,6 +62,7 @@
                 } else {
                     res.end('Error');
                 }
+
             }.bind(this));
         }
     };
