@@ -9,6 +9,8 @@
     Webserver = function(options){
         this.http = {};
         this.response = {};
+        this.currentUrl = null;
+        this.tempateVars = {};
         this.contentType = options['Content-Type'] || 'text/html';
         this.requests = { get : {}, post : {} };
 
@@ -36,10 +38,13 @@
         },
         _initDispatcher : function(){
             this.http.on('request', function(req, res){
-                this.response = res;
+
                 res.writeHead(200, {'Content-Type': this.contentType});
                 var method = this.requests[req.method.toLowerCase()],
                     url    = this.requests[req.method.toLowerCase()][req.url];
+
+                this.currentUrl = url;
+                this.response   = res;
 
                 if(method!==void(0) && url!==void(0)){
                     this.requests[req.method.toLowerCase()][req.url].call(this, res);
@@ -60,7 +65,7 @@
     webserver
         .get('/', function(res){
             res.write('im /');
-            this.set();
+            this.set({ a : 'foo', b : 'bar'});
             this.render();
         })
         .get('/add', function(res){
