@@ -25,7 +25,7 @@
         path         = require('path'),
         childProcess = require('child_process'),
         phantomjs    = require('phantomjs'),
-        binPath      = phantomjs.path,
+        phantom      = phantomjs.path,
 
         // > Helper-Functions
         capitalize = function(value) {
@@ -65,6 +65,7 @@
 
         this.base = '';
         this.path = {
+            'webpage'      : 'localhost:1502',
             'skeleton'     : '',
             'tmp'          : '',
             'tmp_skeleton' : '',
@@ -73,11 +74,15 @@
 
         this.$ = {};
 
+        // > callbacks
         this.ready = false;
         this.onReady = void(0);
-
-        this.complete = false;
-        this.onComplete = void(0);
+        // > ===================
+        this.compile = false;
+        this.onCompile = void(0);
+        // > ===================
+        this.render = false;
+        this.onRender = void(0);
 
         this.pattern = /sk-(left|top|bottom|right)-nav(?:.*?)data-sk-align="static:until\((\d+px)\)"/gm;
 
@@ -94,7 +99,6 @@
 
         extend(object, this);
 
-        // > env is an async function
         env('-', function (errors, window) {
             this.ready = true;
             this.$ = $ = require('jquery')(window);
@@ -139,42 +143,20 @@
                 })
                 .then(self.compileSkeleton())
                 .then(self.createServerAndServeOnRequest(self.path.htmlFile))
-                .then(self.browserOpen('localhost:1502'))
+                .then(self.renderWebpage(self.path.webpage))
 
             .fail(function(value){
                 console.log('fail,', value);
             })
             .done(function(result){
-                this.complete = true;
-                if(this.onComplete!==void(0)){
-                    this.onComplete.call(this);
-                }
-                this._finally();
-                /*
-                var childArgs = [
-                    path.join(__dirname, 'test/phantom/test_phantom.js'),
-                    'some other argument (passed to phantomjs script)'
-                ];
-
-                childProcess.execFile(binPath, childArgs, function(err, stdout, stderr) {
-                    console.log('err', err);
-                    console.log('stdout', stdout);
-                    console.log('stderr', stderr);
-                })
-                */
-            }.bind(this));
+                console.log('finished');
+            });
         },
 
         on : function(value, callback){
-            this._callbackHandler(value, callback);
-        },
-        _callbackHandler : function(value, callback){
 
-            if(!this[value]){
-                this['on'+capitalize(value)] = callback;
-            } else {
-                callback.call(this);
-            }
+            if(!this[value]){ this['on'+capitalize(value)] = callback; }
+            else { callback.call(this); }
 
         },
         coreHTMLFileExists : function(){
@@ -229,20 +211,37 @@
         compileSkeleton : function(){
             return function(){
                 return $.Deferred(function(dfd){
-                    dfd.resolve(true);
+                    exec('sass '+self.path.tmp_skeleton+' '+self.name+'.css', function(code) {
+                        if(code===1) { dfd.reject('Error:'+code); }
+                        self.compile = true;
+                        if(self.onCompile!==void(0)){ self.onCompile.call(self); }
+                        dfd.resolve(true);
+                    });
                 });
             };
         },
         createServerAndServeOnRequest : function(serve){
+
             return function(){
                 return $.Deferred(function(dfd){
+                    var webserver = require('./phantom/webserver.js');
                     dfd.resolve(true);
                 });
             };
         },
-        browserOpen : function(){
+        renderWebpage : function(){
             return function(){
                 return $.Deferred(function(dfd){
+                    /*
+                    var childArgs = [
+                        path.join(__dirname, 'phantom/webserver.js'), serve
+                    ];
+                    childProcess.execFile(phantom, childArgs, function(err, stdout, stderr) {
+                        console.log('err', err);
+                        console.log('stdout', stdout);
+                        console.log('stderr', stderr);
+                    });
+                    */
                     dfd.resolve(true);
                 });
             };
@@ -252,13 +251,13 @@
 
             return function(){
                 return $.Deferred(function(dfd){
-                    var resolved, message, foo;
+                    var resolved, message, res;
                     try {
                         which.sync(bin); resolved=true;
                     } catch (e) {
                         message = 'Please Install Sass'; resolved=false;
                     }
-                    foo = resolved ? dfd.resolve(true) : dfd.reject(false);
+                    res = resolved ? dfd.resolve(true) : dfd.reject(false);
                 });
             };
 
@@ -339,16 +338,9 @@
 
         _watchIfNeeded : function(){},
         _minifyIfNeeded : function(){},
-        _compile : function(){
-            exec('sass '+this.path.tmp_skeleton+' '+this.name+'.css', function(code) {
-                if(code===1) { console.log('Error:', code); return; }
-                console.log('compiled');
-            }.bind(this));
-        },
         _finally : function(){
             this._watchIfNeeded();
             this._minifyIfNeeded();
-            this._compile();
         }
     };
 
@@ -380,11 +372,11 @@
             'onReady' : function(){
                 console.log('ready');
             },
-            'onComplete' : function(){
-                console.log('complete');
+            'onCompile' : function(){
+                console.log('compile');
             },
             'onRender' : function(){
-
+                console.log('render');
             }
         });
     } else {

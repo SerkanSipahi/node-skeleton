@@ -22,7 +22,7 @@ module.exports = function (grunt) {
                 src: ['node-skeleton.js']
             },
             test: {
-                src: ['test/*_test.js']
+                src: ['test/*.js']
             }
         },
         watch: {

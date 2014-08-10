@@ -27,15 +27,18 @@ var test = new SimpleUnitTest();
 var skeleton = new Skeleton({
     base : '../',
     path : {
-        htmlFile : 'index.html',
-        skeleton : 'scss/skeleton.scss',
-        tmp_skeleton : 'tmp/tmp-skeleton.scss',
+        htmlFile : '../index.html',
+        skeleton : '../scss/skeleton.scss',
+        tmp_skeleton : '../tmp/tmp-skeleton.scss',
         tmp : 'tmp'
     },
     'onReady' : function(){
         console.log('onReady')
     },
-    'onComplete' : function(){
-        console.log('onComplete');
+    'onCompile' : function(){
+        console.log('compile');
+    },
+    'onRender' : function(){
+        console.log('onRender');
     }
 });
