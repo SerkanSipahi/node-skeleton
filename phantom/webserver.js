@@ -4,9 +4,12 @@
     'use strict';
 
     var http      = require('http'),
-        Webserver = null;
+        self      = {};
 
-    Webserver = function(options){
+    function Webserver(options){
+
+        self = this;
+
         this.http = {};
         this.response = {};
         this.currentUrl = null;
@@ -17,7 +20,8 @@
         this._initServer();
         this._initDispatcher();
 
-    };
+    }
+    
     Webserver.prototype = {
         // > public
         get : function(url, callback){
@@ -55,6 +59,8 @@
             }.bind(this));
         }
     };
+
+    ///////////////////////////////////
 
     var webserver = new Webserver({
         'Content-Type' : 'text/html'
