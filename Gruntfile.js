@@ -21,6 +21,12 @@ module.exports = function (grunt) {
             main: {
                 src: ['node-skeleton.js']
             },
+            phantom: {
+                src: ['phantom/*.js']
+            },
+            libs: {
+                src: ['libs/*.js']
+            },
             test: {
                 src: ['test/*.js']
             }
@@ -33,6 +39,14 @@ module.exports = function (grunt) {
             src: {
                 files: '<%= jshint.main.src %>',
                 tasks: ['jshint:main']
+            },
+            phantom: {
+                files: '<%= jshint.phantom.src %>',
+                tasks: ['jshint:phantom']
+            },
+            libs : {
+                files : '<%= jshint.libs.src %>',
+                tasks : ['jshint:libs']
             },
             test: {
                 files: '<%= jshint.test.src %>',

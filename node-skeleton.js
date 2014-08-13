@@ -25,6 +25,7 @@
         path         = require('path'),
         childProcess = require('child_process'),
         phantomjs    = require('phantomjs'),
+        webapp       = require('./libs/webapp'),
         phantom      = phantomjs.path,
 
         // > Helper-Functions
@@ -155,8 +156,11 @@
 
         on : function(value, callback){
 
-            if(!this[value]){ this['on'+capitalize(value)] = callback; }
-            else { callback.call(this); }
+            if(!this[value]){
+                this['on'+capitalize(value)] = callback;
+            } else {
+                callback.call(this);
+            }
 
         },
         coreHTMLFileExists : function(){
@@ -224,7 +228,14 @@
 
             return function(){
                 return $.Deferred(function(dfd){
-                    var webserver = require('./phantom/webserver.js');
+                    webapp.templateExtension = '.html';
+                    webapp.get('/index', function(){
+                        this.set({
+                            header : 'im header of index',
+                            footer : 'im footer of index'
+                        });
+                        this.render();
+                    });
                     dfd.resolve(true);
                 });
             };
