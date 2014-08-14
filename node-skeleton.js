@@ -25,7 +25,7 @@
         path         = require('path'),
         childProcess = require('child_process'),
         phantomjs    = require('phantomjs'),
-        webapp       = require('./libs/webapp'),
+        webapp       = require('./libs/webapp')(),
         phantom      = phantomjs.path,
 
         // > Helper-Functions
@@ -228,11 +228,13 @@
 
             return function(){
                 return $.Deferred(function(dfd){
-                    webapp.templateExtension = '.html';
-                    webapp.get('/index', function(){
+
+                    webapp.get('index', function(arg1, arg2){
+
                         this.set({
-                            header : 'im header of index',
-                            footer : 'im footer of index'
+                            intro : 'hello',
+                            header : arg1,
+                            footer : arg2
                         });
                         this.render();
                     });
