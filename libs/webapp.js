@@ -31,15 +31,17 @@
 
         extend = function(target, source, deep){
 
-            for (var key in source){
+            Object.keys(source).map(function(_, key){
                 if (deep && (isObject(source[key]))) {
                     if (isObject(source[key]) && !isObject(target[key])){
                         target[key] = {};
                     }
                     extend(target[key], source[key], deep);
+                } else if (source[key] !== undefined) {
+                    target[key] = source[key];
                 }
-                else if (source[key] !== undefined) { target[key] = source[key];}
-            }
+            });
+
             return target;
 
         },
@@ -57,11 +59,10 @@
 
         self = this;
 
-        this.http = http.Server().listen(options ? options.port : 1502 , 'localhost');
-
         this.body = '';
         this.response = {};
         this.tempateVars = {};
+        this.onBeforeCallback = {};
 
         // > real node request object
         this._request = {};
@@ -89,8 +90,6 @@
 
         this.options = extend(this.defaults, options || {}, true);
 
-        this.init();
-
     }
 
     Webapp.prototype = {
@@ -113,67 +112,96 @@
         on : function(method, url, callback){
             this.request[method][url] = callback; return this;
         },
-
-        set : function(vars){
-            this.tempateVars[this.view] = vars;
+        before : function(method, callback){
+            this.onBeforeCallback[method] = callback;
         },
-        render : function(view){
-            var view = view || this.view,
+        redirect : function(view){
+
+        },
+        set : function(vars){
+            this.tempateVars[this.view] = vars || {};
+        },
+        render : function(view, callback){
+            var _view = view || this.view,
                 options = this.options,
-                path = options.viewPath+this.view+options.extension ,
+                path = options.viewPath+_view+options.extension ,
                 template = fs.readFileSync(path, {encoding : 'utf8'});
 
             this.response.write(
-                this.templateEngines[options.engine](template, this.tempateVars[this.view])
+                this.templateEngines[options.engine](template, this.tempateVars[this.view] || {})
             );
 
         },
+        requestHandler : function(){
 
-        init : function(){
-            this.startRequestHandler();
-        },
-        startRequestHandler : function(){
+            var req             = arguments[0],
+                res             = arguments[1],
+                tmpUrl          = req.url.slice(1).split('/');
 
-            this.http.on('request', function(req, res){
+            // > _request nach this.nodeRequest
+            this._request       = req;
+            this.response       = res;
+            this.request.url    = tmpUrl.join('/');
+            this.request.method = req.method.toLowerCase();
+            this.request.data   = {};
+            this.view           = tmpUrl[0];
+            this.body           = '';
 
-                var tmpUrl = req.url.slice(1).split('/');
+            var requestMethod   = this.request.method,
+                requestView     = tmpUrl[0];
 
-                this._request       = req;
-                this.response       = res;
-                this.request.url    = tmpUrl.join('/');
-                this.request.method = req.method.toLowerCase();
-                this.request.data   = {};
-                this.view           = tmpUrl[0];
-                this.body           = '';
+            res.writeHead(200, {'Content-Type': this.options.contentType});
 
-                var requestMethod   = this.request.method,
-                    requestView     = tmpUrl[0];
+            req.on('data', function(body){
+                this.body += body;
+                if(this.onBeforeCallback[this.request.method]){
+                    this.onBeforeCallback[this.request.method].apply(null, [req, this.body]);
+                }
+            }.bind(this));
 
-                res.writeHead(200, {'Content-Type': this.options.contentType});
-                req.on('data', function(data){ this.body += data; }.bind(this));
-                req.on('end', function(){
+            req.on('end', function(){
 
-                    this.request.data = qs.parse(this.body);
+                this.request.data = qs.parse(this.body);
 
-                    var internalMethod = this.request[req.method.toLowerCase()],
-                        internalView   = this.request[req.method.toLowerCase()][tmpUrl[0]];
+                var internalMethod = this.request[req.method.toLowerCase()],
+                    internalView   = this.request[req.method.toLowerCase()][tmpUrl[0]];
 
-                    if(internalMethod !== undefined && internalView !== undefined){
-                        this.request[requestMethod][requestView].apply(this, tmpUrl.slice(1));
-                        res.end('');
-                    } else {
-                        res.writeHead(404, {'Content-Type': this.contentType});
-                        res.end('Error');
-                    }
-
-                }.bind(this));
+                if(internalMethod !== undefined && internalView !== undefined){
+                    this.request[requestMethod][requestView].apply(this, tmpUrl.slice(1));
+                    res.end('');
+                } else {
+                    res.writeHead(404, {'Content-Type': this.contentType});
+                    res.end('Error');
+                }
 
             }.bind(this));
+
+            return this;
+
         }
     };
 
     module.exports = function(options){
-        return new Webapp(options);
+
+        // > init http server and webapp
+        var app    = new Webapp(options),
+            server = http.createServer(
+                app.requestHandler.bind(app)
+            );
+
+        // > interfaces
+        return {
+            before : app.before.bind(app),
+            get    : app.get.bind(app),
+            post   : app.post.bind(app),
+            put    : app.put.bind(app),
+            del    : app.del.bind(app),
+            all    : app.all.bind(app),
+            on     : app.on.bind(app),
+            render : app.render.bind(app),
+            listen : server.listen.bind(server)
+        };
+
     };
 
 }());

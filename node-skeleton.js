@@ -229,15 +229,42 @@
             return function(){
                 return $.Deferred(function(dfd){
 
+                    webapp.env('maxPostData', '1MB');
+                    webapp.env('XSSProtection', true);
+
+                    webapp.before('get', function(request, stream){
+
+                        // > Too much POST data, kill the connection!
+                        if (stream.length > 1e6){
+                            request.connection.destroy();
+                        }
+
+                    });
+
                     webapp.get('index', function(arg1, arg2){
 
                         this.set({
-                            intro : 'hello',
+                            intro : 'hello index',
                             header : arg1,
                             footer : arg2
                         });
                         this.render();
+
                     });
+
+                    webapp.get('edit', function(){
+
+                        this.set({
+                            intro : 'hello index',
+                            header : arg1,
+                            footer : arg2
+                        });
+                        this.render();
+
+                    });
+
+                    webapp.listen(1502, 'localhost');
+
                     dfd.resolve(true);
                 });
             };
