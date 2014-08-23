@@ -229,17 +229,11 @@
             return function(){
                 return $.Deferred(function(dfd){
 
-                    webapp.env('maxPostData', '1MB');
-                    webapp.env('XSSProtection', true);
-
-                    webapp.before('get', function(request, stream){
-
-                        // > Too much POST data, kill the connection!
-                        if (stream.length > 1e6){
-                            request.connection.destroy();
-                        }
-
-                    });
+                    // > die könnten paralell laufen
+                    // > also max_post_data, xssprotect, auf public pararlell setzen
+                    webapp.use(secure('maxPostData', '1MB'));
+                    webapp.use(secure('XSSProtect', 'strict'));
+                    webapp.use(secure('publicFolder', __dirname+'/webroot'));
 
                     webapp.get('index', function(arg1, arg2){
 
