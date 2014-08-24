@@ -231,9 +231,12 @@
 
                     // > die könnten paralell laufen
                     // > also max_post_data, xssprotect, auf public pararlell setzen
+
+                    /*
                     webapp.use(secure('maxPostData', '1MB'));
                     webapp.use(secure('XSSProtect', 'strict'));
                     webapp.use(secure('publicFolder', __dirname+'/webroot'));
+                    */
 
                     webapp.get('index', function(arg1, arg2){
 
@@ -246,7 +249,7 @@
 
                     });
 
-                    webapp.get('edit', function(){
+                    webapp.get('edit', function(arg1, arg2){
 
                         this.set({
                             intro : 'hello index',

@@ -5,8 +5,10 @@
 
     var self     = {},
         http     = require('http'),
-        url      = require('url'),
         fs       = require('fs'),
+
+        url      = require('url'),
+        mime     = require('mime'),
         qs       = require('query-string'),
 
         _        = require('underscore'),
@@ -63,18 +65,23 @@
             delete      : {}
         };
 
+        this.public     = __dirname+'/webroot';
+
         // > http://stackoverflow.com/questions/5823722/how-to-serve-an-image-using-nodejs
         // > um sicher zu gehen eventuell alles als binary senden ! siehe stackoverflow
 
+        // > https://github.com/broofa/node-mime -> interessant, volle apache liste ! automatische erkennung
+        // > node-mime kann die untere liste ablösen
         this.headers = {
-            '.ico'      : 'image/x-icon',
-            '.html'     : 'text/html',
-            '.js'       : 'text/javascript',
-            '.json'     : 'application/json',
-            '.css'      : 'text/css',
-            '.png'      : 'image/png',
-            '.gif'      : 'imgae/gif',
-            '.jpg'      : 'image/jpg' // > prüfen ob okey(.jpg)
+            '\\.ico'    : 'image/x-icon',
+            '\\.txt'    : 'text/plain',
+            '\\.html'   : 'text/html',
+            '\\.js'     : 'text/javascript',
+            '\\.json'   : 'application/json',
+            '\\.css'    : 'text/css',
+            '\\.png'    : 'image/png',
+            '\\.gif'    : 'imgae/gif',
+            '\\.jpg'    : 'image/jpeg' // > prüfen ob okey(.jpg)
             // > prüfen was es für weitere dateitypen exisitieren
         };
 
@@ -117,6 +124,14 @@
         on : function(method, url, callback){
             this.request[method][url] = callback; return this;
         },
+        determineContentType : function(url, headers){
+            var tmpHeader = headers['\\.txt'];
+            Object.keys(headers).forEach(function(extension){
+                if(!(new RegExp(extension)).test(url)){ return; }
+                tmpHeader = headers[extension];
+            });
+            return tmpHeader;
+        },
         redirect : function(view){
 
         },
@@ -134,14 +149,11 @@
             );
 
         },
-        requestHandler : function(){
+        requestHandler : function(req, res){
 
             //app use hier aufrufen !
 
-            var req             = arguments[0],
-                res             = arguments[1],
-                // > url      = require('url'), hiermit behandeln ! sicherer, ausgereifter
-                tmpUrl          = req.url.slice(1).split('/');
+            var tmpUrl          = req.url.slice(1).split('/'); // > url = require('url'), hiermit behandeln ! sicherer, ausgereifter
 
             // > _request nach this.nodeRequest
             this._request       = req;
@@ -157,7 +169,6 @@
 
             res.writeHead(200, {'Content-Type': this.options.contentType});
 
-
             req.on('data', function(body){
                 this.body += body;
             }.bind(this));
@@ -172,13 +183,24 @@
                 if(internalMethod !== undefined && internalView !== undefined){
                     this.request[requestMethod][requestView].apply(this, tmpUrl.slice(1));
                     res.end('');
-                } else if(this.fileExists(tmpUrl[0])){
-                    // suchen ob vielleicht ein bild, json verlang wurde
                 } else {
-                    res.writeHead(404, {'Content-Type': this.contentType});
-                    res.end('Error');
+                    var publicPath = this.public+'/'+req.url;
+                    fs.stat(publicPath, function (err, stat) {
+                        if(!err){
+                            var file = fs.readFileSync(publicPath);
+                            res.statusCode = 200;
+                            // > mime.lookup('/path/to/file.txt');
+                            // > mime.lookup('/path/to/file.txt');
+                            res.contentType = this.determineContentType(req.url, this.headers);
+                            res.contentLength = stat.size;
+                            res.end(file, 'binary');
+                        } else {
+                            res.statusCode = 404;
+                            res.contentType = 'text/html';
+                            res.end('Error');
+                        }
+                    }.bind(this));
                 }
-
             }.bind(this));
 
             return this;
@@ -188,13 +210,10 @@
 
     module.exports = function(options){
 
-        // > init http server and webapp
-        var app    = new Webapp(options),
-            server = http.createServer(
-                app.requestHandler.bind(app)
-            );
+        var app = new Webapp(options),
+            requestHandler = app.requestHandler.bind(app),
+            server = http.createServer(requestHandler);
 
-        // > interfaces
         return {
             use    : app.use.bind(app),
             get    : app.get.bind(app),
