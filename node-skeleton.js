@@ -234,8 +234,10 @@
 
                     /*
                     webapp.use(secure('maxPostData', '1MB'));
-                    webapp.use(secure('XSSProtect', 'strict'));
+                    webapp.use(secure('xss', 'strict'));
+                    webapp.use(secure('csrf', true)
                     webapp.use(secure('publicFolder', __dirname+'/webroot'));
+                    webapp.use(cache('365Days')); // > kein plan wie genau!
                     */
 
                     webapp.get('index', function(arg1, arg2){
@@ -245,7 +247,7 @@
                             header : arg1,
                             footer : arg2
                         });
-                        this.render();
+                        this.render('tmp_index');
 
                     });
 

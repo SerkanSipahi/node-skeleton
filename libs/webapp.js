@@ -3,6 +3,21 @@
 
     'use strict';
 
+    /*
+     * Ziel der Applikation: Singepage, Socket.io
+     *
+     * Informationen
+     * **********************
+     *
+     * 1.) http://stackoverflow.com/questions/5823722/how-to-serve-an-image-using-nodejs
+     * 2.) Documentation: configuration over convention -> http://de.wikipedia.org/wiki/Konvention_vor_Konfiguration
+     *
+     * Todoes
+     * **********************
+     *
+     * libs/view und libs/webroot nach tests/libs/view und libs/webroot auslagern!
+     * */
+
     var self     = {},
         http     = require('http'),
         fs       = require('fs'),
@@ -11,7 +26,7 @@
         mime     = require('mime'),
         qs       = require('query-string'),
 
-        _        = require('underscore'),
+        _        = require('lodash'),
         jade     = require('jade'),
         mocha    = require('mocha'),
 
@@ -53,36 +68,20 @@
         this.tempateVars      = {};
         this.uses             = [];
 
-        // > real node request object
-        this._request = {};
-
         // > custom request object
         this.request = {
+            object      : {}, // > hier requestobject object
             all         : {},
             get         : {},
             post        : {},
             put         : {},
-            delete      : {}
+            delete      : {},
+            method      : '',
+            data        : []
         };
 
-        this.public     = __dirname+'/webroot';
-
-        // > http://stackoverflow.com/questions/5823722/how-to-serve-an-image-using-nodejs
-        // > um sicher zu gehen eventuell alles als binary senden ! siehe stackoverflow
-
-        // > https://github.com/broofa/node-mime -> interessant, volle apache liste ! automatische erkennung
-        // > node-mime kann die untere liste ablösen
-        this.headers = {
-            '\\.ico'    : 'image/x-icon',
-            '\\.txt'    : 'text/plain',
-            '\\.html'   : 'text/html',
-            '\\.js'     : 'text/javascript',
-            '\\.json'   : 'application/json',
-            '\\.css'    : 'text/css',
-            '\\.png'    : 'image/png',
-            '\\.gif'    : 'imgae/gif',
-            '\\.jpg'    : 'image/jpeg' // > prüfen ob okey(.jpg)
-            // > prüfen was es für weitere dateitypen exisitieren
+        this.response = {
+            header      : ''
         };
 
         this.templateEngines = {
@@ -95,7 +94,11 @@
             contentType : 'text/html',
             engine      : 'underscore',
             extension   : '.ejs',
-            viewPath    : 'libs/view/'
+
+            publicPath : __dirname+'/webroot',
+            viewPath   : __dirname+'/view',
+            imgPath    : __dirname+'/img',
+            jsPath     : __dirname+'/js'
         };
 
         this.options = extend(this.defaults, options || {}, true);
@@ -124,24 +127,16 @@
         on : function(method, url, callback){
             this.request[method][url] = callback; return this;
         },
-        determineContentType : function(url, headers){
-            var tmpHeader = headers['\\.txt'];
-            Object.keys(headers).forEach(function(extension){
-                if(!(new RegExp(extension)).test(url)){ return; }
-                tmpHeader = headers[extension];
-            });
-            return tmpHeader;
-        },
         redirect : function(view){
 
         },
         set : function(vars){
             this.tempateVars[this.view] = vars || {};
         },
-        render : function(view, callback){
+        render : function(view){
             var _view    = view || this.view,
                 options  = this.options,
-                path     = options.viewPath+_view+options.extension ,
+                path     = options.viewPath+'/'+_view+options.extension ,
                 template = fs.readFileSync(path, {encoding : 'utf8'});
 
             this.response.write(
@@ -151,18 +146,20 @@
         },
         requestHandler : function(req, res){
 
-            //app use hier aufrufen !
+            //app use hier aufrufen !;
 
             var tmpUrl          = req.url.slice(1).split('/'); // > url = require('url'), hiermit behandeln ! sicherer, ausgereifter
 
-            // > _request nach this.nodeRequest
-            this._request       = req;
             this.response       = res;
             this.request.url    = tmpUrl.join('/');
+            // > später mit this.request.url ersetzen!
+            this.request.test_url = url.parse(req.headers.host+req.url, true); // > this.getPreparedUrlObject(req);
             this.request.method = req.method.toLowerCase();
             this.request.data   = {};
             this.view           = tmpUrl[0];
             this.body           = '';
+
+            console.log('xxx', this.request.test_url);
 
             var requestMethod   = this.request.method,
                 requestView     = tmpUrl[0];
@@ -175,23 +172,24 @@
 
             req.on('end', function(){
 
+                // > unten request.data auf null setzen, sonst kann ein anderer user
+                // > auf diese zugreifen!
+                // > info: überral im project schauen ob solche stellen existieren
                 this.request.data  = qs.parse(this.body);
 
                 var internalMethod = this.request[req.method.toLowerCase()],
                     internalView   = this.request[req.method.toLowerCase()][tmpUrl[0]];
 
-                if(internalMethod !== undefined && internalView !== undefined){
+                if(internalMethod !== undefined && internalView !== undefined){ // is internalMethod() -> wegen testen
                     this.request[requestMethod][requestView].apply(this, tmpUrl.slice(1));
                     res.end('');
                 } else {
-                    var publicPath = this.public+'/'+req.url;
-                    fs.stat(publicPath, function (err, stat) {
+                    var filePath = this.options.publicPath+'/'+this.request.url; // > this.request.url.pathname
+                    fs.stat(filePath, function (err, stat) {
                         if(!err){
-                            var file = fs.readFileSync(publicPath);
+                            var file = fs.readFileSync(filePath);
                             res.statusCode = 200;
-                            // > mime.lookup('/path/to/file.txt');
-                            // > mime.lookup('/path/to/file.txt');
-                            res.contentType = this.determineContentType(req.url, this.headers);
+                            res.contentType = mime.lookup(filePath);
                             res.contentLength = stat.size;
                             res.end(file, 'binary');
                         } else {
