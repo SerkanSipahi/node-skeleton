@@ -11,6 +11,8 @@
      *
      * 1.) http://stackoverflow.com/questions/5823722/how-to-serve-an-image-using-nodejs
      * 2.) Documentation: configuration over convention -> http://de.wikipedia.org/wiki/Konvention_vor_Konfiguration
+     * 3.) http://blog.invatechs.com/simple_static_file_server_with_caching_on_node_js_part_2 interessanter ansatz für
+     *     statische files!
      *
      * Todoes
      * **********************
@@ -25,6 +27,7 @@
         url      = require('url'),
         mime     = require('mime'),
         qs       = require('query-string'),
+        path     = require('path'),
 
         _        = require('lodash'),
         jade     = require('jade'),
@@ -70,14 +73,14 @@
 
         // > custom request object
         this.request = {
-            object      : {}, // > hier requestobject object
+            object      : {}, // > hier requestobject ablegen
             all         : {},
             get         : {},
             post        : {},
             put         : {},
             delete      : {},
             method      : '',
-            data        : []
+            data        : []  // > hier requestdatas ablegen
         };
 
         this.response = {
@@ -134,9 +137,10 @@
             this.tempateVars[this.view] = vars || {};
         },
         render : function(view){
+
             var _view    = view || this.view,
                 options  = this.options,
-                path     = options.viewPath+'/'+_view+options.extension ,
+                path     = options.viewPath+'/'+_view+options.extension,
                 template = fs.readFileSync(path, {encoding : 'utf8'});
 
             this.response.write(
@@ -148,7 +152,7 @@
 
             //app use hier aufrufen !;
 
-            var tmpUrl          = req.url.slice(1).split('/'); // > url = require('url'), hiermit behandeln ! sicherer, ausgereifter
+            var tmpUrl          = url.parse(req.headers.host+req.url, true).pathname.slice(1).split('/'); // > url = require('url'), hiermit behandeln ! sicherer, ausgereifter
 
             this.response       = res;
             this.request.url    = tmpUrl.join('/');
@@ -161,11 +165,18 @@
 
             console.log('xxx', this.request.test_url);
 
+            var fname = path.basename(url.parse(req.url, true).pathname);
+            var ext = path.extname(fname);
+            var dname = path.dirname(req.url);
+
+            console.log('xFoox', fname, ext, dname);
+
             var requestMethod   = this.request.method,
                 requestView     = tmpUrl[0];
 
             res.writeHead(200, {'Content-Type': this.options.contentType});
 
+            // > prepare post / get datas
             req.on('data', function(body){
                 this.body += body;
             }.bind(this));
@@ -176,6 +187,7 @@
                 // > auf diese zugreifen!
                 // > info: überral im project schauen ob solche stellen existieren
                 this.request.data  = qs.parse(this.body);
+                console.log('requestData', this.request.data);
 
                 var internalMethod = this.request[req.method.toLowerCase()],
                     internalView   = this.request[req.method.toLowerCase()][tmpUrl[0]];

@@ -409,7 +409,7 @@
                 'tmp_skeleton' : cli_skeleton.skeletonTmpSassPath || './tmp/tmp-skeleton.scss'
             },
             'onReady' : function(){
-                console.log('ready');
+                console.log('ready'); 
             },
             'onCompile' : function(){
                 console.log('compile');
